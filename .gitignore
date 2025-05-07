@@ -27,6 +27,7 @@ db.sqlite3
 *.db
 *.dump
 *.pgcache
+*.sqlite3
 media/
 staticfiles/
 __pycache__/
@@ -49,3 +50,4 @@ Pipfile.lock
 
 
 
+Backend/core/db.sqlite3
