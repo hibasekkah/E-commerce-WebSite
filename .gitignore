@@ -8,3 +8,44 @@ frontend/.env
 .DS_Store
 .vscode/
 *.log
+
+
+# ------------------------------
+# 🔐 Django Secrets
+# ------------------------------
+.env
+.env.*
+local_settings.py
+secrets.json
+config/development.yml
+
+# ------------------------------
+# 🗃️ Django Data & Cache
+# ------------------------------
+*.sqlite3
+db.sqlite3
+*.db
+*.dump
+*.pgcache
+media/
+staticfiles/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+migrations/__pycache__/
+
+# ------------------------------
+# 🐍 Python Environments
+# ------------------------------
+venv/
+.venv/
+env/
+myenv/
+pyvenv.cfg
+Pipfile.lock
+.python-version
+
+
+
+
