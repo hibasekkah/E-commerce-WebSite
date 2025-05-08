@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary : '#d32f2f',
-        secondary:'#b12424'
+        primary : '#da2828',
+        secondary:'#aa0a0a'
       },
       container :{
         center: true,
@@ -20,5 +20,6 @@ export default {
     },
   },
   plugins: [],
+  darkMode: 'class',
 }
 
