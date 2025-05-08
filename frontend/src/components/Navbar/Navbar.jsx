@@ -5,6 +5,7 @@ import { FaCartShopping } from 'react-icons/fa6'
 import DarkMode from './DarkMode'
 import { FaCaretDown } from 'react-icons/fa6'
 
+
 const categories = [
   {
     id: 1,
@@ -95,7 +96,9 @@ export default function Navbar() {
             </button>
 
             {/* DarkMode Switch */}
-            <DarkMode />
+            <div className="ml-4"> {/* Ajoute une marge à gauche */}
+              <DarkMode />
+            </div>
           </div>
         </div>
       </div>

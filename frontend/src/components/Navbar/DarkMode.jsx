@@ -1,6 +1,7 @@
 import React from 'react'
 import LightButton from '../../assets/light-mode-button.png'
 import DarkButton from '../../assets/dark-mode-button.png'
+import { MdLightMode } from "react-icons/md";
 
 export default function DarkMode() {
   const [theme, setTheme] = React.useState(
@@ -21,18 +22,11 @@ export default function DarkMode() {
 
   return (
     <div className='relative'>
-      <img 
-        src={LightButton} 
-        alt=""
+      <MdLightMode 
         onClick={() => {setTheme(theme === 'light' ? 'dark' : 'light')}}
-        className={`w-12 cursor-pointer drop-shadow-[1px_1px_1px_rgba(0, 0, 0, 0.1)] transition-all duration-300 absolute rigth-0 z-10 ${theme === 'dark' ? 'opacity-0' : 'opacity-100'}`}
+        className='text-2xl cursor-pointer drop-shadow-[1px_1px_1px_rgba(0, 0, 0, 0.1)] transition-all duration-300  absolute top-1/2 -translate-y-1/2 right-0'
       />
-      <img 
-        src={DarkButton} 
-        alt=""
-        onClick={() => {setTheme(theme === 'light' ? 'dark' : 'light')}}
-        className='w-12 cursor-pointer drop-shadow-[1px_1px_1px_rgba(0, 0, 0, 0.1)] transition-all duration-300' 
-      />
+     
     </div>
   )
 }
