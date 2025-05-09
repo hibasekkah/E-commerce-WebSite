@@ -32,9 +32,10 @@ function App() {
     transition: "background-image 1s ease-in-out"
   };
 
+
   return (
-    <div>
-      <div style={bgImage}>
+    <div className="dark:bg-gray-900 dark:text-white">
+      <div style={bgImage} className="min-h-screen">
       <Navbar />
       <Hero />
       </div>
