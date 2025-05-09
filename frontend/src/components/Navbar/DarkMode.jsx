@@ -1,6 +1,4 @@
 import React from 'react'
-import LightButton from '../../assets/light-mode-button.png'
-import DarkButton from '../../assets/dark-mode-button.png'
 import { MdLightMode } from "react-icons/md";
 
 export default function DarkMode() {

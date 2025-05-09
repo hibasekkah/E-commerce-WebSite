@@ -6,6 +6,7 @@ import BgImageAllProd from "./assets/AllProd.jpg"
 import BgImageCarpet from "./assets/Carpet.jpg"
 import BgImageFez from "./assets/Fez.jpg"
 import BgImageFoodProducts from './assets/FoodProducts.webp'
+import Category from "./components/Category/Category"
 
 function App() {
   const images = [BgImageMarrakech, BgImageAllProd, BgImageCarpet, BgImageFez,BgImageFoodProducts];
@@ -32,10 +33,14 @@ function App() {
   };
 
   return (
-    <div style={bgImage}>
+    <div>
+      <div style={bgImage}>
       <Navbar />
       <Hero />
+      </div>
+      <Category />
     </div>
+    
   );
 }
 
