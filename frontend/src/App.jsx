@@ -7,8 +7,18 @@ import BgImageCarpet from "./assets/Carpet.jpg"
 import BgImageFez from "./assets/Fez.jpg"
 import BgImageFoodProducts from './assets/FoodProducts.webp'
 import Category from "./components/Category/Category"
+import Footer from "./components/Footer/Footer"
+import AOS from "aos"
+import 'aos/dist/aos.css';
 
 function App() {
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+    });
+  }, []);
+
   const images = [BgImageMarrakech, BgImageAllProd, BgImageCarpet, BgImageFez,BgImageFoodProducts];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -40,6 +50,7 @@ function App() {
       <Hero />
       </div>
       <Category />
+      <Footer />
     </div>
     
   );

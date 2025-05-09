@@ -17,49 +17,57 @@ export default function Category() {
       line1:'Stand Out',
       line2:'With',
       line3:'Leather Craft',
-      ImageCategory:Category1 
+      ImageCategory:Category1,
+      delay: 100
     }, {
       id: 2,
-      line1: 'Wrap Yourself',
-      line2: 'In',
-      line3: 'Textiles & Carpets',
-      ImageCategory:Category2
-    }, {
-      id:3,
       line1: 'Bring Warmth',
       line2: 'To Your',
       line3: 'Ceramics & Pottery',
-      ImageCategory:Category3
+      ImageCategory:Category2,
+      delay: 200
+    }, {
+      id:3, 
+      line1: 'Wrap Yourself',
+      line2: 'In',
+      line3: 'Textiles & Carpets',
+      ImageCategory:Category3,
+      delay: 300
     }, {
       id:4,
       line1: 'Shine Bright',
       line2: 'With',
       line3: 'Jewelry & Accessories',
-      ImageCategory:Category4
+      ImageCategory:Category4,
+      delay: 400
     }, {
       id:5,
       line1: 'Feel the Craft',
       line2: 'Of',
       line3: 'Woodwork',
-      ImageCategory:Category5
+      ImageCategory:Category5,
+      delay: 500
     }, {
       id:6,
       line1: 'Timeless Art',
       line2: 'Forged In',
       line3: 'Metal Products',
-      ImageCategory:Category6
+      ImageCategory:Category6,
+      delay: 600
     }, {
       id:7,
       line1: 'Glow Naturally',
       line2: 'With',
       line3: 'Natural Cosmetics',
-      ImageCategory:Category7
+      ImageCategory:Category7,
+      delay: 700
     }, {
       id:8,
       line1: 'Spice Up',
       line2: 'Your Taste',
       line3: 'Spices & Food',
-      ImageCategory:Category8
+      ImageCategory:Category8, 
+      delay: 800
     }
   ]
 
@@ -77,7 +85,7 @@ export default function Category() {
         <div className='container flex justify-center items-center'>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10'>
             {CategoryInfo.map((Category) => (
-              <CardCategory line1={Category.line1} line2={Category.line2} line3={Category.line3} ImageCategory={Category.ImageCategory}/>
+              <CardCategory line1={Category.line1} line2={Category.line2} line3={Category.line3} ImageCategory={Category.ImageCategory} delay={Category.delay}/>
             ))}
           </div>
         </div>
