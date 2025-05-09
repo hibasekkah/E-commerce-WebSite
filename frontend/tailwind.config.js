@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        dancing : ["Dancing Script", "cursive"],
+      },
       colors: {
         primary : '#da2828',
         secondary:'#aa0a0a'

@@ -125,7 +125,7 @@ export default function Navbar() {
                 className='transition-all duration-200 group-hover:rotate-180' />
               </span>
             </a>
-            <div className='absolute z-[9999] hidden group-hover:block w-[150px] rounded-md bg-white text-black shadow-md'>
+            <div className='absolute z-[9999] hidden group-hover:block w-[200px] rounded-md bg-white text-black shadow-md '>
               <ul>
                 {
                   categories.map((data) => (
