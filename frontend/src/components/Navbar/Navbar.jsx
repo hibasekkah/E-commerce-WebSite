@@ -17,8 +17,8 @@ const categories = [
 ];
 
 const Menu = [
-  { id: 1, name: 'Home', link: '/#' },
-  { id: 2, name: 'About Us', link: '/#' },
+  { id: 1, name: 'Home', link: '/' },
+  { id: 2, name: 'About Us', link: '/About' },
   { id: 3, name: 'Contact Us', link: '/#' },
 ];
 
