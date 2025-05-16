@@ -26,6 +26,6 @@ class LoginAPIView(APIView):
             })
         else:
             return Response({'error':'Invalid credentials'},status=status.HTTP_400_BAD_REQUEST)
+
     def get(self,request):
         return Response({'message':'please use post method login'})
-    
