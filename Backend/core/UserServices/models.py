@@ -1,5 +1,4 @@
 from django.db import models
-
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
 # Create your models here.
@@ -15,8 +14,6 @@ class Users(AbstractUser):
     account_status=models.CharField(max_length=50,blank=True,null=True,default='Active',choices=(('Active','Active'),('Inactive','Inactive'),('Blocked','Blocked')))
     role=models.CharField(max_length=50,blank=True,null=True,default='Admin',choices=(('Admin','Admin'),('Supplier','Supplier'),('Customer','Customer'),('Staff','Staff')))
     dob=models.DateField(blank=True,null=True)
-    username=models.CharField(max_length=50,unique=True)
-    password=models.CharField(max_length=255)
     social_media_links=models.JSONField(blank=True,null=True)
     addition_details=models.JSONField(blank=True,null=True)
     language=models.CharField(max_length=50,blank=True,null=True,default='English',choices=(('English','English'),('Hindi','Hindi'),('Spanish','Spanish'),('French','French'),('German','German'),('Italian','Italian'),('Portuguese','Portuguese'),('Russian','Russian'),('Chinese','Chinese'),('Japanese','Japanese'),('Korean','Korean'),('Arabic','Arabic'),('Turkish','Turkish'),('Dutch','Dutch'),('Polish','Polish'),('Swedish','Swedish'),('Danish','Danish'),('Norwegian','Norwegian'),('Finnish','Finnish'),('Greek','Greek'),('Czech','Czech'),('Hungarian','Hungarian'),('Romanian','Romanian'),('Bulgarian','Bulgarian'),('Croatian','Croatian'),('Slovak','Slovak'),('Slovenian','Slovenian'),('Lithuanian','Lithuanian'),('Latvian','Latvian'),('Estonian','Estonian'),('Ukrainian','Ukrainian'),('Belarusian','Belarusian'),('Serbian','Serbian'),('Macedonian','Macedonian'),('Bosnian','Bosnian'),('Albanian','Albanian'),('Montenegrin','Montenegrin'),('Catalan','Catalan'),('Basque','Basque'),('Galician','Galician'),('Welsh','Welsh'),('Irish','Irish'),('Scots Gaelic','Scots Gaelic'),('Manx','Manx'),('Cornish','Cornish'),('Breton','Breton')))
@@ -36,15 +33,6 @@ class Users(AbstractUser):
 
     def defaultkey():
         return 'username'
-    
-    def save(self, *args, **kwargs):
-        if not self.domain_user_id and self.id:
-            self.domain_user_id=Users.objects.get(id=self.id)
-
-        if not self.pk or Users.objects.filter(pk=self.pk).values('password').first()['password']!=self.password:
-            self.password=make_password(self.password)
-        super().save(*args, **kwargs)
-    
 
 class UserShippingAddress(models.Model):
     id=models.AutoField(primary_key=True)

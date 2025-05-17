@@ -1,11 +1,17 @@
 from django.db.models import ForeignKey
-def getDynamicModels():
+
+def getDynamicFormModels():
     return {
-        'product':'ProductServices.Product',
-        'category':'ProcuctServices.Categories',
-        'warehouse':'ProductServices.Warehouse'
+        'product':'ProductServices.Products',
+        'category':'ProductServices.Categories',
+        'warehouse':'InventoryServices.Warehouse'
     }
 
+def checkisFileField(field):
+    return field in ['image','file','path','video','audio','profile_pic']
+
+def getExludeFields():
+    return ['id','created_at','updated_at','domain_user_id','added_by_user_id','created_by_user_id','updated_by_user_id','is_staff','is_superuser','is_active','plan_type','last_login','last_device','date_joined','last_ip','domain_name']
 def getDynamicFormFields(model_instance,domain_user_id):
     fields={'text':[],'select':[],'checkbox':[],'radio':[],'textarea':[],'json':[],'file':[]}
     for field in model_instance._meta.fields:
@@ -14,11 +20,13 @@ def getDynamicFormFields(model_instance,domain_user_id):
             'name':field.name,
             'label':label,
             'placeholder':'Enter '+label,
-            'default':model_instance.__dict__[field.name] if field.name in model_instance.__dict__ else '',
+            'default': model_instance.__dict__[field.name] if field.name in model_instance.__dict__ else '',
             'required':not field.null,
         }
         
-        if field.get_internal_type()=='TextField':
+        if checkisFileField(field.name):
+            fielddata['type']='file'
+        elif field.get_internal_type()=='TextField':
             fielddata['type']='textarea'
         elif field.get_internal_type()=='JSONField':
             fielddata['type']='json'

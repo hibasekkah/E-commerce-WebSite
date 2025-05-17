@@ -22,5 +22,5 @@ from UserServices.Controllers.DynamicFormController import DynamicFormController
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/',include('UserServices.urls')),
-    path('api/getform/<str:modelName>',DynamicFormController.as_view(),name='dynamicForm')
+    path('api/getform/<str:modelName>/',DynamicFormController.as_view(),name='dynamicForm')
 ]
