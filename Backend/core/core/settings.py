@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'rest_framework',  # Django REST Framework
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
-    'Users',
     'django_countries',
 ]
 
