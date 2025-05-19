@@ -38,9 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'Users',
     'rest_framework',  # Django REST Framework
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
+    'Users',
     'django_countries',
 ]
 
@@ -161,4 +163,5 @@ REST_FRAMEWORK = {
     ),
 }
 
-AUTH_USER_MODEL = 'Users.models.User'
+AUTH_USER_MODEL = 'Users.User'
+

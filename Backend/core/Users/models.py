@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django_countries.fields import CountryField
 
-
+    
 # Create your models here.
 class User(AbstractUser):
     username = models.CharField(max_length=100)
@@ -13,9 +13,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username']
     phone=models.CharField(max_length=15,blank=True,null=True)
     address=models.TextField()
-    city=models.CharField(max_length=50,blank=True,null=True)
-    state=models.CharField(max_length=50,blank=True,null=True)
-    pincode=models.CharField(max_length=10,blank=True,null=True)
+    city= models.CharField(max_length=50,blank=True,null=True)
+    state= models.CharField(max_length=50,blank=True,null=True)  
+    pincode= models.CharField(max_length=10,blank=True,null=True)
     country = CountryField(blank=True, null=True, default='MA')    
     profile_pic=models.JSONField(null=True, blank=True)
     account_status=models.CharField(max_length=50,blank=True,null=True,default='Active',choices=(('Active','Active'),('Inactive','Inactive'),('Blocked','Blocked')))
