@@ -47,28 +47,23 @@ function App() {
     <div className="dark:bg-gray-900 dark:text-white">
       <Router>
         <Navbar />
-        <div>
           <Routes>
-          {/* Define routes for your pages */}
-          <Route path='/about' element={
-            <div>
+            {/* Define routes for your pages */}
+            <Route path='/about' element={
               <About />
-              <Footer />
-            </div>
-          } />
-          <Route path='/' element={
-            <div style={bgImage} className="min-h-screen">
-              <Hero />
-              <Category />
-              <hr className="my-2 mx-80 border-primary border-t-2"/>
-              <About />
-              <Footer />
-            </div>
-          } />
-        </Routes>
-        </div>
-        
-        
+            } />
+            <Route path='/' element={
+              <div>
+                <div style={bgImage} className="min-h-screen">
+                <Hero />
+                </div>
+                <Category />
+                <hr className="my-2 mx-80 border-primary border-t-2"/>
+                <About />
+              </div>
+            } />
+          </Routes>
+        <Footer />
       </Router>
     </div>
   );
