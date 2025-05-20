@@ -24,4 +24,6 @@ from .views import registerView
 
 urlpatterns = [
     path('register',registerView.as_view()),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Login
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
