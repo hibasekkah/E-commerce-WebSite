@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
     'django_countries',
-    'captcha',
+    'django_recaptcha',
 ]
 
 MIDDLEWARE = [
