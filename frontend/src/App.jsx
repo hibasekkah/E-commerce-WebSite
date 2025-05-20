@@ -12,6 +12,27 @@ import Footer from "./components/Footer/Footer";
 import AOS from "aos";
 import 'aos/dist/aos.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ProductCard from "./components/Product/ProductCard";
+import image1 from './assets/Products/Caftan.jpg'
+import image2 from './assets/Products/Balgha.jpg'
+import image3 from './assets/Products/Tarbouche.jpg'
+
+const Products = [
+    {
+        image: image1,
+        description: "Women's Caftan – Royal Blue Color with Gold and Silver Embroidery",
+        rating: 3
+    }, {
+        image: image2, 
+        description: "Men's Babouche – Classic Black Leather",
+        rating: 4.5
+    }, {
+        image: image3, 
+        description: "Men's Tarbouche – Traditional Red Fez Hat with Elegant Black Tassel",
+        rating: 3.5
+    }
+];
+
 function App() {
   useEffect(() => {
     AOS.init({
@@ -55,7 +76,7 @@ function App() {
             <Route path='/' element={
               <div>
                 <div style={bgImage} className="min-h-screen">
-                <Hero />
+                  <Hero />
                 </div>
                 <Category />
                 <hr className="my-2 mx-80 border-primary border-t-2"/>

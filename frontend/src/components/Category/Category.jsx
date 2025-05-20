@@ -85,7 +85,7 @@ export default function Category() {
         <div className='container flex justify-center items-center'>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10'>
             {CategoryInfo.map((Category) => (
-              <CardCategory line1={Category.line1} line2={Category.line2} line3={Category.line3} ImageCategory={Category.ImageCategory} delay={Category.delay}/>
+              <CardCategory key={Category.id} line1={Category.line1} line2={Category.line2} line3={Category.line3} ImageCategory={Category.ImageCategory} delay={Category.delay}/>
             ))}
           </div>
         </div>
