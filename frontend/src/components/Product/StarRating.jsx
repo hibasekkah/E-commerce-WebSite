@@ -1,0 +1,20 @@
+import React from 'react';
+
+export default function StarRating({ rating }) {
+  const percentage = (rating / 5) * 100;
+
+  return (
+    <div className="relative inline-block text-gray-300 text-xl leading-none">
+      {/* Étoiles grises (arrière-plan) */}
+      <div>★★★★★</div>
+
+      {/* Étoiles dorées (remplies selon le score) */}
+      <div
+        className="absolute top-0 left-0 overflow-hidden text-yellow-400"
+        style={{ width: `${percentage}%` }}
+      >
+        ★★★★★
+      </div>
+    </div>
+  );
+}
