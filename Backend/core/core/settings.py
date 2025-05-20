@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
     'django_countries',
+    'captcha',
 ]
 
 MIDDLEWARE = [
@@ -131,7 +132,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# AUTH_USER_MODEL = 'User.Users'
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
@@ -163,4 +164,9 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'Users.User'
+
+
+# Clés Google reCAPTCHA
+RECAPTCHA_PUBLIC_KEY = "6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
+RECAPTCHA_PRIVATE_KEY = "6Le3XUErAAAAAAY_aTfy57SilY-8czviRlPwJS7D"
 
