@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoClose } from "react-icons/io5";
-import LoginButton from "./Category/Button/LoginButton";
-import Register from "./Register";
+import LoginButton from "../Button/LoginButton";
 
 export default function Login({ onClose, onSwitchToRegister }) {
   const [email, setEmail] = useState("");

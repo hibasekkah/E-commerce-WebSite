@@ -5,8 +5,8 @@ import { FaCartShopping, FaCaretDown } from 'react-icons/fa6';
 import { HiOutlineMenuAlt3, HiOutlineX } from 'react-icons/hi';
 import DarkMode from './DarkMode';
 import { CgProfile } from "react-icons/cg";
-import Login from '../Login'
-import Register from '../Register';
+import Login from '../LoginRegister/Login'
+import Register from '../LoginRegister/Register';
 
 const categories = [
   { id: 1, name: 'Leather Craft', link: '/#' },

@@ -1,5 +1,5 @@
 import React from 'react'
-import BrowseButton from './Button/BrowseButton'
+import BrowseButton from '../Button/BrowseButton'
 
 export default function CardCategory({line1, line2, line3, ImageCategory, delay}) {
   return (
