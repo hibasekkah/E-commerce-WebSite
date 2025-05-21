@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 import LoginButton from "../Button/LoginButton";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 export default function Register({ onClose, onSwitchToLogin }) {
   const [username, setUsername] = useState("");
@@ -12,6 +13,25 @@ export default function Register({ onClose, onSwitchToLogin }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("");
   const [birthDay, setBirthDay] = useState("");
+  const [captchaToken, setCaptchaToken] = useState(null);
+    const recaptchaRef = useRef(null);
+  
+    const handleCaptchaChange = (token) => {
+      setCaptchaToken(token);
+    };
+  
+    const handleRegister = () => {
+      if (!captchaToken) {
+        alert("Please complete the reCAPTCHA");
+        return;
+      }
+  
+      // Add your register logic here
+      console.log("register in with:", { email, password, captchaToken });
+  
+      // Optionally reset reCAPTCHA
+      recaptchaRef.current.reset();
+    };
 
   return (
     <div className="bg-white shadow-lg w-96 p-10 rounded-xl dark:bg-gray-900 dark:text-white">
@@ -69,19 +89,19 @@ export default function Register({ onClose, onSwitchToLogin }) {
       />
 
       <div className="mb-5">
-  <PhoneInput
-    country={'ma'}
-    value={phoneNumber}
-    onChange={phone => setPhoneNumber(phone)}
-    inputStyle={{
-      backgroundColor: 'transparent', // on laisse vide ici
-    }}
-    inputClass="!w-full !h-[40px] !pl-[48px] !rounded-md !border !border-gray-300 !bg-white text-black placeholder-gray-500 dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white dark:!placeholder-gray-400"
-    buttonClass="!bg-transparent dark:!bg-gray-700"
-    containerClass="!w-full"
-    dropdownClass="!w-auto !min-w-[200px] dark:!bg-gray-700 dark:!text-white"    
-  />
-</div>
+        <PhoneInput
+          country={'ma'}
+          value={phoneNumber}
+          onChange={phone => setPhoneNumber(phone)}
+          inputStyle={{
+            backgroundColor: 'transparent', // on laisse vide ici
+          }}
+          inputClass="!w-full !h-[40px] !pl-[48px] !rounded-md !border !border-gray-300 !bg-white text-black placeholder-gray-500 dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white dark:!placeholder-gray-400"
+          buttonClass="!bg-transparent dark:!bg-gray-700"
+          containerClass="!w-full"
+          dropdownClass="!w-auto !min-w-[200px] dark:!bg-gray-700 dark:!text-white"    
+        />
+      </div>
 
 
       <select
@@ -95,8 +115,16 @@ export default function Register({ onClose, onSwitchToLogin }) {
         <option value="male">Male</option>
       </select>
 
+      <div className="mb-5">
+        <ReCAPTCHA
+          sitekey="6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
+          onChange={handleCaptchaChange}
+          ref={recaptchaRef}
+        />
+      </div>
+
       <div className="w-full flex flex-col gap-3 justify-center items-center">
-        <LoginButton title="Register" className="w-full" />
+        <LoginButton title="Register" className="w-full" onClick={handleRegister}/>
         <p className="mt-3">
           Already got an account ? 
           <span className="text-blue-600 cursor-pointer hover:text-blue-900 hover:font-semibold
