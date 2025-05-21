@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
     'django_countries',
-    'django_recaptcha',
+    # 'django_recaptcha',
 ]
 
 MIDDLEWARE = [
@@ -165,17 +165,32 @@ AUTH_USER_MODEL = 'Users.User'
 
 
 # Clés Google reCAPTCHA
-RECAPTCHA_PUBLIC_KEY = "6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
-RECAPTCHA_PRIVATE_KEY = "6Le3XUErAAAAAAY_aTfy57SilY-8czviRlPwJS7D"
+# RECAPTCHA_PUBLIC_KEY = "6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
+# RECAPTCHA_PRIVATE_KEY = "6Le3XUErAAAAAAY_aTfy57SilY-8czviRlPwJS7D"
 
-# settings.py
+# # settings.py
 
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
+# # settings.py
 
-# Pour que le cookie JWT fonctionne dans des contextes cross-site
-JWT_AUTH_COOKIE = 'jwt'
-JWT_AUTH_COOKIE_SAMESITE = 'None'
-JWT_AUTH_COOKIE_SECURE = True  # ⚠️ Nécessite HTTPS
+# # Paramètres de base sécurisés
+# SESSION_COOKIE_SECURE = True  # Uniquement via HTTPS
+# SESSION_COOKIE_HTTPONLY = True  # Inaccessible via JavaScript
+# SESSION_COOKIE_SAMESITE = 'Lax'  # Équilibre sécurité et UX
+# SESSION_COOKIE_PATH = '/'  # Accessible sur tout le domaine
+
+# # Protection CSRF
+# CSRF_COOKIE_SECURE = True
+# CSRF_COOKIE_HTTPONLY = True
+# CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_PATH = '/'
+
+# Configuration JWT avancée (si vous utilisez djangorestframework-simplejwt)
+# JWT_AUTH = {
+#     'JWT_AUTH_COOKIE': 'jwt_token',
+#     'JWT_AUTH_COOKIE_SECURE': True,
+#     'JWT_AUTH_COOKIE_SAMESITE': 'None',  # Nécessaire pour cross-site
+#     'JWT_AUTH_COOKIE_PATH': '/',
+#     'JWT_AUTH_COOKIE_DOMAIN': None,  # À définir si nécessaire
+#     'JWT_AUTH_COOKIE_PARTITIONED': True,  # Nouvel attribut requis pour Chrome
+#     'JWT_AUTH_COOKIE_HTTPONLY': True,  # Protection contre XSS
+# } # ⚠️ Nécessite HTTPS
