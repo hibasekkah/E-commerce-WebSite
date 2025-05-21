@@ -20,18 +20,72 @@ export default function Register({ onClose, onSwitchToLogin }) {
       setCaptchaToken(token);
     };
   
-    const handleRegister = () => {
-      if (!captchaToken) {
-        alert("Please complete the reCAPTCHA");
+    const handleRegister = async (e) => {
+      e.preventDefault();               // don’t let the form reload the page
+
+      /* ----------------- 1. quick client-side validation ----------------- */
+      if (!username || !email || !password || !confirmedPassword || !birthDay) {
+        alert("Please fill in all required fields.");
         return;
       }
-  
-      // Add your register logic here
-      console.log("register in with:", { email, password, captchaToken });
-  
-      // Optionally reset reCAPTCHA
-      recaptchaRef.current.reset();
+
+      if (password !== confirmedPassword) {
+        alert("Passwords do not match.");
+        return;
+      }
+
+      if (!captchaToken) {
+        alert("Please complete the reCAPTCHA.");
+        return;
+      }
+
+      /* ----------------- 2. build request body ----------------- */
+      const payload = {
+        username,
+        email,
+        password,
+        phone: phoneNumber || null,
+        gender: gender || null,
+        dob: birthDay,          // Django expects YYYY-MM-DD string → DateField
+        recaptcha: captchaToken // name this the way your DRF view expects
+      };
+
+      /* ----------------- 3. POST to your Django endpoint ----------------- */
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/register/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // ✅ registration succeeded
+          alert("Account created! You can now log in.");
+          // clear the form or switch to the login modal
+          onSwitchToLogin();
+        } else {
+          // ❌ server responded with 4xx/5xx – show details if provided
+          const msg =
+            data?.detail ||
+            Object.values(data).flat().join("\n") || // DRF validation errors
+            "Registration failed. Please try again.";
+          alert(msg);
+        }
+      } catch (err) {
+        // network / CORS / unexpected error
+        console.error(err);
+        alert("Something went wrong. Check your connection and try again.");
+      } finally {
+        /* ----------------- 4. always reset the CAPTCHA widget ------------- */
+        if (recaptchaRef.current) recaptchaRef.current.reset();
+        setCaptchaToken(null);
+      }
     };
+
 
   return (
     <div className="bg-white shadow-lg w-96 p-10 rounded-xl dark:bg-gray-900 dark:text-white">
