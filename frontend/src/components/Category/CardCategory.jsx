@@ -1,5 +1,5 @@
 import React from 'react'
-import BrowseButton from '../BrowseButton'
+import BrowseButton from './Button/BrowseButton'
 
 export default function CardCategory({line1, line2, line3, ImageCategory, delay}) {
   return (
@@ -9,7 +9,7 @@ export default function CardCategory({line1, line2, line3, ImageCategory, delay}
           <p className='mb-[2px]'>{line1}</p>
           <p className='text-xl font-semibold mb-[1px]'>{line2}</p>
           <p className='text-xl xl:text-2xl mb-10 font-semibold'>{line3}</p>
-          <BrowseButton />
+          <BrowseButton/>
         </div>
       </div>
       <img src={ImageCategory} alt="" className='h-[200px] absolute bottom-0 right-0' />

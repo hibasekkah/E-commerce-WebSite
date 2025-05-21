@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect  } from 'react';
 import Logo from '../../assets/MorocAntik_logo_without_bg.png';
 import { IoMdSearch } from "react-icons/io";
 import { FaCartShopping, FaCaretDown } from 'react-icons/fa6';
 import { HiOutlineMenuAlt3, HiOutlineX } from 'react-icons/hi';
 import DarkMode from './DarkMode';
+import { CgProfile } from "react-icons/cg";
+import Login from '../Login'
+import Register from '../Register';
 
 const categories = [
   { id: 1, name: 'Leather Craft', link: '/#' },
@@ -24,6 +27,34 @@ const Menu = [
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
+  const modalLoginRef = useRef();
+  const modalRegisterRef = useRef();
+
+  const handleClickOutside = (event) => {
+    if (modalLoginRef.current && !modalLoginRef.current.contains(event.target)) {
+      setShowLogin(false);
+    }
+    if (modalRegisterRef.current && !modalRegisterRef.current.contains(event.target)) {
+      setShowRegister(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showLogin || showRegister) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showLogin, showRegister]);
 
   return (
     <div className='shadow-md bg-white dark:bg-gray-900 dark:text-white duration-200 relative z-40'>
@@ -50,7 +81,44 @@ export default function Navbar() {
               />
               <IoMdSearch className='text-gray-500 group-hover:text-primary absolute top-1/2 -translate-y-1/2 right-3' />
             </div>
+            {/* Login / Register */}
+            <div className='relative'>
+              <div className='gap-1 cursor-pointer hidden sm:flex' onClick={() => setShowLogin(true)}>
+                <div className='text-2xl'>
+                  <CgProfile />
+                </div>
+                <p>Login / Register</p>
+              </div>
+              {showLogin && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                  <div ref={modalLoginRef}>
+                    <Login
+                      onClose={() => setShowLogin(false)}
+                      onSwitchToRegister={() => {
+                        setShowLogin(false);
+                        setShowRegister(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
+              {showRegister && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                  <div ref={modalRegisterRef}>
+                    <Register 
+                      onClose={() => setShowRegister(false)} 
+                      onSwitchToLogin={() => {
+                        setShowRegister(false);
+                        setShowLogin(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+            
             {/* Order button */}
             <button
               onClick={() => alert('Ordering not available yet')}
@@ -133,6 +201,16 @@ export default function Navbar() {
               </a>
             ))}
           </div>
+          <hr className='border-t'/>
+          {/* Login / Register */}
+            <div className='relative'>
+              <div className='flex  items-center gap-1 cursor-pointer py-1 text-base hover:text-primary' onClick={() => setShowLogin(true)}>
+                <div className=''>
+                  <CgProfile />
+                </div>
+                <p>Login / Register</p>
+              </div>
+            </div>
         </div>
       )}
     </div>
