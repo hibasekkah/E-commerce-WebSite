@@ -3,7 +3,7 @@ import Ceramics from "../../assets/Ceramics.webp"
 
 export default function About() {
   return (
-    <div className='container sm:min-h-[600px] sm:grid sm:place-items-center mb-[80px]'>
+    <div className='container sm:min-h-[600px] sm:grid sm:place-items-center mb-[80px] px-4 sm:px-10'>
       <div className='grid grid-cols-1 sm:grid-cols-2 place-items-center gap-10'>
         <div>
           <img src={Ceramics} alt=""  
@@ -15,7 +15,7 @@ export default function About() {
             <h1 className='text-3xl sm:text-4xl font-bold' data-aos='fade-up' delay='200'>
               About Us
             </h1>
-            <p className='text-xm text-gray-500' data-aos='fade-up' delay='300'>From Our Culture to Your Home</p>
+            <p className='text-xl text-gray-500' data-aos='fade-up' delay='300'>From Our Culture to Your Home</p>
             <p data-aos='slide-up' delay='400'>
              MorocAntik is more than just a marketplace — it’s a celebration of Morocco’s rich cultural heritage. As proud Moroccans, our mission is to promote our artisanal traditions and share them with the world. From handwoven carpets and intricate ceramics to authentic leather goods and culinary delights, every item we offer tells a story — a story rooted in generations of craftsmanship, creativity, and cultural pride.
             </p>
