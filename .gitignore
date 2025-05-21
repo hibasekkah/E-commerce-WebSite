@@ -52,3 +52,4 @@ Pipfile.lock
 
 Backend/core/db.sqlite3
 Backend/core/core/__pycache__/settings.cpython-313.pyc
+Backend/core/core/__pycache__/settings.cpython-312.pyc
