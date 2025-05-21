@@ -20,6 +20,7 @@ class LoginView(APIView):
         user = serializer.validated_data['user']
         
         refresh = RefreshToken.for_user(user)
+        print("Login success for:", user.email)
         
         return Response({
             'refresh': str(refresh),
