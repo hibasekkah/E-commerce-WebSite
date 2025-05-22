@@ -3,7 +3,7 @@ import { IoClose } from "react-icons/io5";
 import LoginButton from "../Button/LoginButton";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import ReCAPTCHA from 'react-google-recaptcha';
+import axios from "axios"
 
 export default function Register({ onClose, onSwitchToLogin }) {
   const [username, setUsername] = useState("");
@@ -13,78 +13,95 @@ export default function Register({ onClose, onSwitchToLogin }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("");
   const [birthDay, setBirthDay] = useState("");
-  const [captchaToken, setCaptchaToken] = useState(null);
-    const recaptchaRef = useRef(null);
+  const [eUsername, setEUsername] = useState("");
+  const [eEmail, setEEmail] = useState("");
+  const [ePassword, setEPassword] = useState("");
+  const [eConfirmedPassword, setEConfirmedPassword] = useState("");
+  const [eNotEqual, setENotEqual] = useState("");
+  const [ePhone, setEPhone] = useState("");
+
   
-    const handleCaptchaChange = (token) => {
-      setCaptchaToken(token);
+  const handleRegister = async () => {
+    // Basic validation
+    let isValid = true;
+    const usernameTrim = username.trim();
+    const emailTrim = email.trim();
+    const passwordTrim = password.trim();
+    const confirmedPasswordTrim = confirmedPassword.trim();
+    const phoneTrim = phoneNumber.trim();
+
+    if (!usernameTrim) {
+      setEUsername("Please enter your username.");
+      isValid = false;
+    } else {
+      setEUsername("");
+    }
+
+    if (!emailTrim) {
+      setEEmail("Please enter a valid email address.");
+      isValid = false;
+    } else {
+      setEEmail("");
+    }
+
+    if (!passwordTrim) {
+      setEPassword("Please enter your password.");
+      isValid = false;
+    } else {
+      setEPassword("");
+    }
+
+    if (!confirmedPasswordTrim) {
+      setEConfirmedPassword("Please confirm your password.");
+      isValid = false;
+    } else {
+      setEConfirmedPassword("");
+    }
+
+    if (passwordTrim && confirmedPasswordTrim && passwordTrim !== confirmedPasswordTrim) {
+      setENotEqual("Passwords do not match.");
+      isValid = false;
+    } else {
+      setENotEqual("");
+    }
+
+    if (!phoneTrim) {
+      setEPhone("Please enter a valid phone number.");
+      isValid = false;
+    } else {
+      setEPhone("");
+    }
+
+    // Stop if any validation failed
+    if (!isValid) return;
+
+    const payload = {
+      username: usernameTrim,
+      email: emailTrim,
+      password: passwordTrim,
+      phone: phoneTrim,
+      gender: gender || null,
+      dob: birthDay || null,
     };
-  
-    const handleRegister = async (e) => {
-      e.preventDefault();               // don’t let the form reload the page
 
-      /* ----------------- 1. quick client-side validation ----------------- */
-      if (!username || !email || !password || !confirmedPassword || !birthDay) {
-        alert("Please fill in all required fields.");
-        return;
+    try {
+      // Register the user
+      const res = await axios.post("http://127.0.0.1:8000/api/register/", payload);
+
+      if (res.status === 201 || res.status === 200) { //200 OK, 201 created
+        alert("Account created! You can now log in.");
+      } else {
+        alert("Registration failed. Please try again.");
       }
+    } catch (error) {
+      const message =
+        error.response?.data?.detail ||
+        Object.values(error.response?.data || {}).flat().join("\n") ||
+        "Something went wrong.";
+      alert(message);
+    }
+  };
 
-      if (password !== confirmedPassword) {
-        alert("Passwords do not match.");
-        return;
-      }
-
-      if (!captchaToken) {
-        alert("Please complete the reCAPTCHA.");
-        return;
-      }
-
-      /* ----------------- 2. build request body ----------------- */
-      const payload = {
-        username,
-        email,
-        password,
-        phone: phoneNumber || null,
-        gender: gender || null,
-        dob: birthDay,          // Django expects YYYY-MM-DD string → DateField
-        recaptcha: captchaToken // name this the way your DRF view expects
-      };
-
-      /* ----------------- 3. POST to your Django endpoint ----------------- */
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/register/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          // ✅ registration succeeded
-          alert("Account created! You can now log in.");
-          // clear the form or switch to the login modal
-          onSwitchToLogin();
-        } else {
-          // ❌ server responded with 4xx/5xx – show details if provided
-          const msg =
-            data?.detail ||
-            Object.values(data).flat().join("\n") || // DRF validation errors
-            "Registration failed. Please try again.";
-          alert(msg);
-        }
-      } catch (err) {
-        // network / CORS / unexpected error
-        console.error(err);
-        alert("Something went wrong. Check your connection and try again.");
-      } finally {
-        /* ----------------- 4. always reset the CAPTCHA widget ------------- */
-        if (recaptchaRef.current) recaptchaRef.current.reset();
-        setCaptchaToken(null);
-      }
-    };
 
 
   return (
@@ -103,46 +120,50 @@ export default function Register({ onClose, onSwitchToLogin }) {
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       />
+      <div className="mb-5 text-primary">
+        {eUsername}
+      </div>
 
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       />
+      <div className="mb-5 text-primary">
+        {eEmail}
+      </div>
 
       <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       /> 
+      <div className="mb-5 text-primary">
+        {ePassword}
+      </div>
+
       <input
         type="password"
         placeholder="Confirmed Password"
         value={confirmedPassword}
         onChange={(e) => setConfirmedPassword(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       />
+      <div className="mb-5 text-primary">
+        {eConfirmedPassword ? eConfirmedPassword : eNotEqual}
+      </div>
 
-      <input
-        type="date"
-        placeholder="Birthday"
-        value={birthDay}
-        onChange={(e) => setBirthDay(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg 
-                  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-      />
-
-      <div className="mb-5">
+      <div className="mb-1">
         <PhoneInput
           country={'ma'}
           value={phoneNumber}
@@ -156,7 +177,19 @@ export default function Register({ onClose, onSwitchToLogin }) {
           dropdownClass="!w-auto !min-w-[200px] dark:!bg-gray-700 dark:!text-white"    
         />
       </div>
+      <p className="mb-5 text-primary">
+        {ePhone}
+      </p>
+      
 
+      <input
+        type="date"
+        placeholder="Birthday"
+        value={birthDay}
+        onChange={(e) => setBirthDay(e.target.value)}
+        className="border p-2 w-full mb-5 rounded-lg 
+                  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+      />
 
       <select
         value={gender}
@@ -169,13 +202,6 @@ export default function Register({ onClose, onSwitchToLogin }) {
         <option value="male">Male</option>
       </select>
 
-      <div className="mb-5">
-        <ReCAPTCHA
-          sitekey="6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
-          onChange={handleCaptchaChange}
-          ref={recaptchaRef}
-        />
-      </div>
 
       <div className="w-full flex flex-col gap-3 justify-center items-center">
         <LoginButton title="Register" className="w-full" onClick={handleRegister}/>

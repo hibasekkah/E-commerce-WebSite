@@ -23,17 +23,16 @@ config/development.yml
 # 🗃️ Django Data & Cache
 # ------------------------------
 *.sqlite3
-db.sqlite3
 *.db
 *.dump
 *.pgcache
-*.sqlite3
 media/
 staticfiles/
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.pyc
 migrations/__pycache__/
 
 # ------------------------------
@@ -47,9 +46,3 @@ pyvenv.cfg
 Pipfile.lock
 .python-version
 
-
-
-
-Backend/core/db.sqlite3
-Backend/core/core/__pycache__/settings.cpython-313.pyc
-Backend/core/core/__pycache__/settings.cpython-312.pyc

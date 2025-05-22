@@ -1,30 +1,65 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 import LoginButton from "../Button/LoginButton";
-import ReCAPTCHA from "react-google-recaptcha"
+import axios from "axios";
 
 export default function Login({ onClose, onSwitchToRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [captchaToken, setCaptchaToken] = useState(null);
-  const recaptchaRef = useRef(null);
+  const [eEmail, setEEmail] = useState("");
+  const [ePassword, setEPassword] = useState("");
 
-  const handleCaptchaChange = (token) => {
-    setCaptchaToken(token);
-  };
+  const handleLogin = async () => {
+    // Basic validation
+    let isValid = true;
 
-  const handleLogin = () => {
-    if (!captchaToken) {
-      alert("Please complete the reCAPTCHA");
-      return;
+    if (!email.trim()) {
+      setEEmail("Please enter a valid email address.");
+      isValid = false;
+    } else {
+      setEEmail("");
     }
 
-    // Add your login logic here
-    console.log("Logging in with:", { email, password, captchaToken });
+    if (!password.trim()) {
+      setEPassword("Please enter your password.");
+      isValid = false;
+    } else {
+      setEPassword("");
+    }
 
-    // Optionally reset reCAPTCHA
-    recaptchaRef.current.reset();
+    if (!isValid) return;
+
+    const payload = {
+      email,
+      password,
+    };
+
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/api/login/", payload);
+
+      if (res.status === 200) {
+        const { access, refresh, role } = res.data;
+
+        // Store tokens if needed
+        localStorage.setItem("access_token", access);
+        localStorage.setItem("refresh_token", refresh);
+        localStorage.setItem("role", role);
+
+        alert("Login successful!");
+        onClose(); // Optionally close the login modal
+      } else {
+        alert("Login failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const message =
+        error.response?.data?.detail ||
+        Object.values(error.response?.data || {}).flat().join("\n") ||
+        "Something went wrong.";
+      alert(message);
+    }
   };
+
 
   return (
     <div className="bg-white shadow-lg w-96 p-10 rounded-xl dark:bg-gray-900 dark:text-white">
@@ -42,26 +77,27 @@ export default function Login({ onClose, onSwitchToRegister }) {
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="border p-2 w-full mb-5 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       />
+
+      <div className="mb-5 text-primary">
+        {eEmail}
+      </div>
 
       <input
         type="password"
         placeholder="Mot de passe"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="border p-2 w-full mb-10 rounded-lg
+        className="border p-2 w-full mb-1 rounded-lg
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       />
-
-      <div className="mb-5">
-        <ReCAPTCHA
-          sitekey="6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
-          onChange={handleCaptchaChange}
-          ref={recaptchaRef}
-        />
+      <div className="mb-10 text-primary">
+        {ePassword}
       </div>
+
+      
 
       <div className="w-full flex flex-col gap-3 justify-center items-center">
         <LoginButton title="Login" className="w-full" onClick={handleLogin} />

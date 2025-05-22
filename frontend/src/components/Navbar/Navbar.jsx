@@ -34,6 +34,8 @@ export default function Navbar() {
   const modalLoginRef = useRef();
   const modalRegisterRef = useRef();
 
+  const role = localStorage.getItem('role') || '';
+
   const handleClickOutside = (event) => {
     if (modalLoginRef.current && !modalLoginRef.current.contains(event.target)) {
       setShowLogin(false);
@@ -88,6 +90,7 @@ export default function Navbar() {
                   <CgProfile />
                 </div>
                 <p>Login / Register</p>
+                {/* <p>{role !== '' ? role : 'Login / Register'}</p> */}
               </div>
               {showLogin && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
