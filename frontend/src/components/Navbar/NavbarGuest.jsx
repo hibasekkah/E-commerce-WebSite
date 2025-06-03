@@ -25,7 +25,7 @@ const Menu = [
   { id: 3, name: 'Contact Us', link: '/#' },
 ];
 
-export default function Navbar() {
+export default function NavbarGuest() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [showLogin, setShowLogin] = useState(false);

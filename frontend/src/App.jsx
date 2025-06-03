@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
 import BgImageMarrakech from "./assets/Marrakech.jpg";
 import BgImageAllProd from "./assets/AllProd.jpg";
@@ -16,6 +15,13 @@ import ProductCard from "./components/Product/ProductCard";
 import image1 from './assets/Products/Caftan.jpg'
 import image2 from './assets/Products/Balgha.jpg'
 import image3 from './assets/Products/Tarbouche.jpg'
+import NavbarGuest from "./components/Navbar/NavbarGuest";
+import NavbarClient from "./components/Navbar/NavbarClient";
+import NavbarAdmin from "./components/Navbar/NavbarAdmin";
+import SidebarAccount from "./components/Sidebar/SidebarAccount";
+import Profile from "./components/Profile";
+import AdminPage from "./components/AdminPage";
+
 
 const Products = [
     {
@@ -64,16 +70,20 @@ function App() {
     transition: "background-image 1s ease-in-out"
   };
 
+  const role = localStorage.getItem('role') || '';
+  const username = localStorage.getItem('username') || '';
+
   return (
     <div className="dark:bg-gray-900 dark:text-white">
       <Router>
-        <Navbar />
+        { username !== '' ? ( role === 'Customer' ? <NavbarClient username={username} /> : <NavbarAdmin username={username}/>) : <NavbarGuest />}
           <Routes>
             {/* Define routes for your pages */}
             <Route path='/about' element={
               <About />
             } />
             <Route path='/' element={
+              role === 'Admin' ? <AdminPage /> :
               <div>
                 <div style={bgImage} className="min-h-screen">
                   <Hero />
@@ -81,6 +91,17 @@ function App() {
                 <Category />
                 <hr className="my-2 mx-80 border-primary border-t-2"/>
                 <About />
+              </div>
+            } />
+            <Route path='/Account' element={
+              <div className="flex">
+                <SidebarAccount />
+              </div>
+            }/>
+            <Route path='/Profile' element={
+              <div className="flex">
+                <SidebarAccount />
+                <Profile />
               </div>
             } />
           </Routes>

@@ -8,6 +8,8 @@ export default function Login({ onClose, onSwitchToRegister }) {
   const [password, setPassword] = useState("");
   const [eEmail, setEEmail] = useState("");
   const [ePassword, setEPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageStatus, setMessageStatus] = useState(false);
 
   const handleLogin = async () => {
     // Basic validation
@@ -38,25 +40,38 @@ export default function Login({ onClose, onSwitchToRegister }) {
       const res = await axios.post("http://127.0.0.1:8000/api/login/", payload);
 
       if (res.status === 200) {
-        const { access, refresh, role } = res.data;
-
+        const { access, refresh, role, 
+                username, email, phone,
+                dob, gender } = res.data;
+       
         // Store tokens if needed
         localStorage.setItem("access_token", access);
         localStorage.setItem("refresh_token", refresh);
         localStorage.setItem("role", role);
+        localStorage.setItem("username", username);
+        localStorage.setItem("email", email);
+        localStorage.setItem("phone", phone);
+        localStorage.setItem("dob", dob);
+        localStorage.setItem("gender", gender);
 
-        alert("Login successful!");
-        onClose(); // Optionally close the login modal
+        setMessage("Login successful!");
+        setMessageStatus(false);
+        setTimeout(()=>{
+            onClose();
+            setMessage("");
+        }, 3000)
       } else {
-        alert("Login failed. Please try again.");
+        setMessage("Login failed. Please try again.");
+        setMessageStatus(true);
       }
     } catch (error) {
       console.error("Login error:", error);
-      const message =
+      const messageError =
         error.response?.data?.detail ||
         Object.values(error.response?.data || {}).flat().join("\n") ||
         "Something went wrong.";
-      alert(message);
+      setMessage(messageError);
+      setMessageStatus(true);
     }
   };
 
@@ -101,6 +116,7 @@ export default function Login({ onClose, onSwitchToRegister }) {
 
       <div className="w-full flex flex-col gap-3 justify-center items-center">
         <LoginButton title="Login" className="w-full" onClick={handleLogin} />
+        <p className={messageStatus ? 'text-primary' : 'text-blue-600'}>{message}</p>
         <p className="mt-3">
           Not a member ?   
           <span className="text-blue-600 cursor-pointer hover:text-blue-900 hover:font-semibold

@@ -12,7 +12,7 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username','dob', 'role', 'account_status','phone']
     phone=models.CharField(max_length=15,blank=True,null=True)
-    gender = models.CharField(max_length=50,blank=True,null=True,choices=(('Femme','Femme'),('Homme','Homme')))
+    gender = models.CharField(max_length=50,blank=True,null=True,choices=(('Female','Female'),('Male','Male')))
     account_status=models.CharField(max_length=50,blank=True,null=True,default='Active',choices=(('Active','Active'),('Inactive','Inactive'),('Blocked','Blocked')))
     role=models.CharField(max_length=50,blank=True,null=True,default='Admin',choices=(('Admin','Admin'),('Supplier','Supplier'),('Customer','Customer')))
     dob=models.DateField(blank=True,null=True)

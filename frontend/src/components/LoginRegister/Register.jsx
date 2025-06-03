@@ -19,6 +19,8 @@ export default function Register({ onClose, onSwitchToLogin }) {
   const [eConfirmedPassword, setEConfirmedPassword] = useState("");
   const [eNotEqual, setENotEqual] = useState("");
   const [ePhone, setEPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageStatus, setMessageStatus] = useState(false);
 
   
   const handleRegister = async () => {
@@ -89,16 +91,63 @@ export default function Register({ onClose, onSwitchToLogin }) {
       const res = await axios.post("http://127.0.0.1:8000/api/register/", payload);
 
       if (res.status === 201 || res.status === 200) { //200 OK, 201 created
-        alert("Account created! You can now log in.");
+        setMessage(" Account created successfully! Redirecting...");
+        setTimeout(async () => {
+          const payload = {
+            email,
+            password,
+          };
+
+          try {
+            const res = await axios.post("http://127.0.0.1:8000/api/login/", payload);
+
+            if (res.status === 200) {
+              const { access, refresh, role, 
+                      username, email, phone,
+                      dob, gender } = res.data;
+            
+              // Store tokens if needed
+              localStorage.setItem("access_token", access);
+              localStorage.setItem("refresh_token", refresh);
+              localStorage.setItem("role", role);
+              localStorage.setItem("username", username);
+              localStorage.setItem("email", email);
+              localStorage.setItem("phone", phone);
+              localStorage.setItem("dob", dob);
+              localStorage.setItem("gender", gender);
+
+              setMessage("Login successful!");
+              setMessageStatus(false);
+              setTimeout(()=>{
+                  onClose();
+                  setMessage("");
+              }, 2000)
+              // Optionally close the login modal
+            } else {
+              setMessage("Login failed. Please try again.");
+              setMessageStatus(true);
+            }
+          } catch (error) {
+            console.error("Login error:", error);
+            const messageError =
+              error.response?.data?.detail ||
+              Object.values(error.response?.data || {}).flat().join("\n") ||
+              "Something went wrong.";
+            setMessage(messageError);
+            setMessageStatus(true);
+          }
+        }, 2000);
       } else {
-        alert("Registration failed. Please try again.");
+        setMessage("Registration failed. Please try again.");
+        setMessageStatus(true);
       }
     } catch (error) {
-      const message =
+      const messageError =
         error.response?.data?.detail ||
         Object.values(error.response?.data || {}).flat().join("\n") ||
         "Something went wrong.";
-      alert(message);
+      setMessage(messageError);
+      setMessageStatus(true);
     }
   };
 
@@ -198,13 +247,14 @@ export default function Register({ onClose, onSwitchToLogin }) {
                   dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
       >
         <option value="">Select Gender</option>
-        <option value="female">Female</option>
-        <option value="male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Male">Male</option>
       </select>
 
 
       <div className="w-full flex flex-col gap-3 justify-center items-center">
         <LoginButton title="Register" className="w-full" onClick={handleRegister}/>
+        <p className={messageStatus ? 'text-primary' : 'text-blue-600'}>{message}</p>
         <p className="mt-3">
           Already got an account ? 
           <span className="text-blue-600 cursor-pointer hover:text-blue-900 hover:font-semibold
