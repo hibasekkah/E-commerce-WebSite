@@ -59,7 +59,7 @@ export default function Login({ onClose, onSwitchToRegister }) {
         setTimeout(()=>{
             onClose();
             setMessage("");
-        }, 3000)
+        }, 2500)
       } else {
         setMessage("Login failed. Please try again.");
         setMessageStatus(true);
