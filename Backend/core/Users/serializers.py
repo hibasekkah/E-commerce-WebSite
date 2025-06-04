@@ -65,4 +65,96 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("Invalid email/password combination.")
         data['user'] = user
-        return data   
+        return data 
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating user information excluding password and email
+    """
+    class Meta:
+        model = User
+        fields = [
+            'username', 'phone', 'gender', 'dob'
+        ]
+        extra_kwargs = {
+            'username': {'required': False},
+            'phone': {'required': False},
+            'gender': {'required': False},
+            'dob': {'required': False},
+        }
+    
+
+class PasswordUpdateSerializer(serializers.Serializer):
+    """
+    Serializer for updating user password
+    """
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        """
+        Validate that the current password is correct
+        """
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        """
+        Validate new password strength
+        """
+        # You can add custom password validation here
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        
+        # Check if password contains at least one digit
+        if not any(char.isdigit() for char in value):
+            raise serializers.ValidationError("Password must contain at least one digit.")
+        
+        # Check if password contains at least one letter
+        if not any(char.isalpha() for char in value):
+            raise serializers.ValidationError("Password must contain at least one letter.")
+        
+        return value
+
+    def validate(self, data):
+        """
+        Validate that new password and confirm password match
+        """
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("New password and confirm password do not match.")
+        
+        # Check that new password is different from current password
+        user = self.context['request'].user
+        if user.check_password(data['new_password']):
+            raise serializers.ValidationError("New password must be different from current password.")
+        
+        return data
+
+    def save(self, **kwargs):
+        """
+        Update the user's password
+        """
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+    
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for viewing complete user profile (read-only for sensitive fields)
+    """
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'phone', 'gender', 
+            'account_status', 'role', 'dob', 'currency', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'email', 'account_status', 'role', 
+            'created_at', 'updated_at'
+        ]
