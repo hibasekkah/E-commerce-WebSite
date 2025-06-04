@@ -19,8 +19,9 @@ import NavbarGuest from "./components/Navbar/NavbarGuest";
 import NavbarClient from "./components/Navbar/NavbarClient";
 import NavbarAdmin from "./components/Navbar/NavbarAdmin";
 import SidebarAccount from "./components/Sidebar/SidebarAccount";
-import Profile from "./components/Profile";
 import AdminPage from "./components/AdminPage";
+import Addresses from "./components/Account/Addresses";
+import ProfilePage from "./components/Account/ProfilePage";
 
 
 const Products = [
@@ -99,9 +100,12 @@ function App() {
               </div>
             }/>
             <Route path='/Profile' element={
+              <ProfilePage />
+            } />
+            <Route path='/Addresses' element={
               <div className="flex">
                 <SidebarAccount />
-                <Profile />
+                <Addresses />
               </div>
             } />
           </Routes>
