@@ -37,7 +37,7 @@ export default function Login({ onClose, onSwitchToRegister }) {
     };
 
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/login/", payload);
+      const res = await axios.post("http://127.0.0.1:8000/api/Users/login/", payload);
 
       if (res.status === 200) {
         const { access, refresh, role, 

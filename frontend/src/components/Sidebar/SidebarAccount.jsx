@@ -1,19 +1,28 @@
 import React from 'react'
-import { CgProfile, CgShoppingCart, CgHome, CgSupport, CgLogOut } from 'react-icons/cg'
+import { CgProfile, CgShoppingCart, CgHome, CgSupport, CgLogOut } from 'react-icons/cg';
+import { RiLockPasswordLine } from "react-icons/ri";
+
 
 const SideMenu = [
     { id: 1, icon: CgProfile, name: 'Profile', link:'/Profile'},
-    { id: 2, icon: CgShoppingCart, name: 'Orders History', link: '#' },
-    { id: 3, icon: CgHome, name: 'Addresses', link: '/Addresses' },
-    { id: 4, icon: CgSupport, name: 'Support Tickets', link: '#' },
-    { id: 5, icon: CgLogOut, name: 'Logout', action: 'logout' },
+    { id: 2, icon: RiLockPasswordLine, name: 'Change Password', link: '/ChangePasswordPage' },
+    { id: 3, icon: CgShoppingCart, name: 'Orders History', link: '#' },
+    { id: 4, icon: CgHome, name: 'Addresses', link: '/Addresses' },
+    { id: 5, icon: CgSupport, name: 'Support Tickets', link: '#' },
+    { id: 6, icon: CgLogOut, name: 'Logout', action: 'logout' },
 ]
 
 
 const handleProfileAction = (action) => {
   if (action === 'logout') {
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    localStorage.removeItem("phone");
+    localStorage.removeItem("dob");
+    localStorage.removeItem("gender");
     // Optional: Redirect to homepage or login
     window.location.href = '/';
   }
