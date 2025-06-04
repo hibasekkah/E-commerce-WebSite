@@ -90,24 +90,159 @@ class VariationOptionViewSet(viewsets.ModelViewSet):
 
 # Products/views.py
 
-from rest_framework import viewsets
-from .models import Product, ProductItem, ProductImage
-from .serializers import ProductSerializer, ProductItemSerializer, ProductImageSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.db import transaction
+from .models import Product, ProductItem
+from .serializers import (
+    ProductListSerializer,
+    ProductDetailSerializer,
+    ProductCreateSerializer,
+    ProductUpdateSerializer,
+    ProductDeleteSerializer,
+    ProductItemCreateSerializer,
+    ProductItemUpdateSerializer,
+    ProductBulkStatusUpdateSerializer
+)
 
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class ProductListView(APIView):
+    """List all products or create a new product"""
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        products = Product.objects.filter(deleted_at__isnull=True)
+        serializer = ProductListSerializer(products, many=True, context={'request': request})
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'results': serializer.data
+        })
 
-class ProductItemViewSet(viewsets.ModelViewSet):
-    queryset = ProductItem.objects.all()
-    serializer_class = ProductItemSerializer
+    def post(self, request):
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Only admin users can create products'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
+        serializer = ProductCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            product = serializer.save()
+            return Response(
+                ProductDetailSerializer(product, context={'request': request}).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ProductImageViewSet(viewsets.ModelViewSet):
-    queryset = ProductImage.objects.all()
-    serializer_class = ProductImageSerializer
+class ProductDetailView(APIView):
+    """Retrieve, update or delete a product instance"""
+    permission_classes = [IsAuthenticated]
 
+    def get_object(self, pk):
+        try:
+            return Product.objects.get(pk=pk, deleted_at__isnull=True)
+        except Product.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        product = self.get_object(pk)
+        if not product:
+            return Response(
+                {'error': 'Product not found or has been deleted'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ProductDetailSerializer(product, context={'request': request})
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        product = self.get_object(pk)
+        if not product:
+            return Response(
+                {'error': 'Product not found or has been deleted'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Only admin users can update products'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = ProductUpdateSerializer(product, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            product = serializer.save()
+            return Response(ProductDetailSerializer(product, context={'request': request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        product = self.get_object(pk)
+        if not product:
+            return Response(
+                {'error': 'Product not found or already deleted'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Only admin users can delete products'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        delete_serializer = ProductDeleteSerializer(data=request.data)
+        if not delete_serializer.is_valid():
+            return Response(delete_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        delete_serializer.save(product)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ProductItemView(APIView):
+    """Create or update product items"""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = ProductItemCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            product_item = serializer.save()
+            return Response(
+                ProductItemCreateSerializer(product_item, context={'request': request}).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, item_id):
+        try:
+            product_item = ProductItem.objects.get(pk=item_id, deleted_at__isnull=True)
+        except ProductItem.DoesNotExist:
+            return Response(
+                {'error': 'Product item not found or deleted'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ProductItemUpdateSerializer(product_item, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            product_item = serializer.save()
+            return Response(
+                ProductItemUpdateSerializer(product_item, context={'request': request}).data
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ProductBulkStatusView(APIView):
+    """Bulk update product statuses"""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = ProductBulkStatusUpdateSerializer(data=request.data)
+        if serializer.is_valid():
+            product_ids = serializer.save()
+            return Response({
+                'success': True,
+                'message': f'Updated status for {len(product_ids)} products',
+                'product_ids': product_ids
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
 
         
