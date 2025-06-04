@@ -2,10 +2,9 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from Users.models import User
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import InMemoryUploadedFile, TemporaryUploadedFile
-import base64
-import mimetypes
+from django.conf import settings
+import os
+
 
 class Category(models.Model):
     id = models.AutoField(primary_key=True)
@@ -38,12 +37,13 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
+def category_image_upload_path(instance, filename):
+    return f'categories/{instance.category.id}/{filename}'
+
 class CategoryImage(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='images')
-    image_data = models.BinaryField()
-    image_name = models.CharField(max_length=255)
-    image_type = models.CharField(max_length=50)
-    image_size = models.PositiveIntegerField()
+    image = models.ImageField(upload_to=category_image_upload_path)
     alt_text = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(
@@ -51,48 +51,28 @@ class CategoryImage(models.Model):
         help_text="Ordre d'affichage des images de la catégorie"
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['display_order', 'created_at']
-    
+
     def __str__(self):
         return f"Image for {self.category.name}"
-    
-    def save_image_from_file(self, image_file):
-        if hasattr(image_file, 'read'):
-            self.image_data = image_file.read()
-            self.image_name = getattr(image_file, 'name', 'unknown')
-            self.image_size = len(self.image_data)
-            self.image_type = getattr(image_file, 'content_type', None) or mimetypes.guess_type(self.image_name)[0] or 'image/jpeg'
-        else:
-            with open(image_file, 'rb') as f:
-                self.image_data = f.read()
-                self.image_name = image_file.split('/')[-1]
-                self.image_size = len(self.image_data)
-                self.image_type = mimetypes.guess_type(image_file)[0] or 'image/jpeg'
-    
-    def get_image_url(self):
-        if self.image_data:
-            encoded_image = base64.b64encode(self.image_data).decode('utf-8')
-            return f"data:{self.image_type};base64,{encoded_image}"
+
+    def image_url(self):
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
         return None
 
 class Variation(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, db_index=True)
     name = models.CharField(max_length=100, db_index=True)
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Ordre d'apparition des variations dans la configuration du produit"
-    )
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     class Meta:
         unique_together = ('category', 'name')
-        ordering = ['display_order', 'name']
         indexes = [
             models.Index(fields=['category', 'name']),
-            models.Index(fields=['category', 'display_order']),
         ]
 
     def __str__(self):
@@ -101,19 +81,13 @@ class Variation(models.Model):
 class VariationOption(models.Model):
     variation = models.ForeignKey(Variation, on_delete=models.CASCADE, db_index=True)
     value = models.CharField(max_length=100)
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Ordre d'apparition des options dans les sélecteurs"
-    )
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     class Meta:
         unique_together = ('variation', 'value')
-        ordering = ['display_order', 'value']
         indexes = [
             models.Index(fields=['variation', 'value']),
-            models.Index(fields=['variation', 'display_order']),
         ]
 
     def __str__(self):
@@ -143,7 +117,7 @@ class Product(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True,)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -151,10 +125,10 @@ class Product(models.Model):
         db_index=True
     )
     tax_percentage = models.FloatField(
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(0), MaxValueValidator(100)],blank=True, null=True,
     )
-    brand = models.CharField(max_length=255, db_index=True)
-    brand_model = models.CharField(max_length=255)
+    brand = models.CharField(max_length=255, db_index=True,blank=True, null=True,)
+    brand_model = models.CharField(max_length=255,blank=True, null=True,)
 
     class Meta:
         ordering = ['display_order', '-created_at']
@@ -185,14 +159,14 @@ class ProductItem(models.Model):
     )
     description = models.TextField()
     stock_quantity = models.PositiveIntegerField(default=0)
-    sku = models.CharField(max_length=100, unique=True, db_index=True)
+    sku = models.CharField(max_length=100, unique=True, db_index=True, blank=True, null=True,)
     display_order = models.PositiveIntegerField(
         default=0,
         help_text="Ordre d'affichage des déclinaisons de produit"
     )
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True,)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -229,13 +203,13 @@ class ProductConfiguration(models.Model):
 
     def __str__(self):
         return f"{self.product_item} - {self.variation_option}"
+    
+def product_image_upload_path(instance, filename):
+    return f'products/{instance.product.id}/{filename}'
 
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', db_index=True)
-    image_data = models.BinaryField()
-    image_name = models.CharField(max_length=255)
-    image_type = models.CharField(max_length=50)
-    image_size = models.PositiveIntegerField()
+    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE, related_name='images', db_index=True)
+    image = models.ImageField(upload_to=product_image_upload_path)
     alt_text = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(
@@ -254,6 +228,12 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Image for {self.product.name}"
 
+    def image_url(self):
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        return None
+
+
 class Promotion(models.Model):
     name = models.CharField(max_length=200, db_index=True)
     description = models.TextField()
@@ -271,7 +251,7 @@ class Promotion(models.Model):
         help_text="Ordre d'affichage sur la page d'accueil"
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True,)
 
     class Meta:
         ordering = ['display_order', '-start_date']
@@ -285,7 +265,7 @@ class Promotion(models.Model):
         return self.name
 
 class PromotionProduct(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_index=True)
+    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE, db_index=True)
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, db_index=True)
     display_order = models.PositiveIntegerField(
         default=0,
@@ -417,13 +397,13 @@ class ProductReview(models.Model):
 
     def __str__(self):
         return f"Review for {self.product.name if self.product else 'Unknown'} by {self.review_user}"
-
+    
+    
+def review_image_upload_path(instance, filename):
+    return f'reviews/{instance.review.id}/{filename}'
 class ProductReviewImage(models.Model):
     review = models.ForeignKey(ProductReview, on_delete=models.CASCADE, related_name='images')
-    image_data = models.BinaryField()
-    image_name = models.CharField(max_length=255)
-    image_type = models.CharField(max_length=50)
-    image_size = models.PositiveIntegerField()
+    image = models.ImageField(upload_to=review_image_upload_path)
     alt_text = models.CharField(max_length=255, blank=True)
     display_order = models.PositiveIntegerField(
         default=0,
@@ -436,3 +416,10 @@ class ProductReviewImage(models.Model):
 
     def __str__(self):
         return f"Image for review {self.review.id}"
+
+    def image_url(self):
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        return None
+    
+

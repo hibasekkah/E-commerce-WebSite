@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Users',
+    'Products',
     'rest_framework',  # Django REST Framework
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
@@ -163,6 +164,10 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'Users.User'
 
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Clés Google reCAPTCHA
 # RECAPTCHA_PUBLIC_KEY = "6Le3XUErAAAAAIEgf-Sp2SAiVPJc6e0vLP16FwBK"
