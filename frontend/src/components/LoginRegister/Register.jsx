@@ -88,7 +88,7 @@ export default function Register({ onClose, onSwitchToLogin }) {
 
     try {
       // Register the user
-      const res = await axios.post("http://127.0.0.1:8000/api/register/", payload);
+      const res = await axios.post("http://127.0.0.1:8000/api/Users/register/", payload);
 
       if (res.status === 201 || res.status === 200) { //200 OK, 201 created
         setMessage(" Account created successfully! Redirecting...");
@@ -99,7 +99,7 @@ export default function Register({ onClose, onSwitchToLogin }) {
           };
 
           try {
-            const res = await axios.post("http://127.0.0.1:8000/api/login/", payload);
+            const res = await axios.post("http://127.0.0.1:8000/api/Users/login/", payload);
 
             if (res.status === 200) {
               const { access, refresh, role, 
