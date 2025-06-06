@@ -22,7 +22,7 @@ class CategoryImageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'image_url']
         extra_kwargs = {
             'name': {
-                'validators': [],  # Disable default unique validator
+                'validators': [], 
             }
         }
 
@@ -37,7 +37,7 @@ class CategoryImageSerializer(serializers.ModelSerializer):
         else:
             queryset = queryset.filter(parent_category__isnull=True)
         
-        if self.instance:  # For updates, exclude current instance
+        if self.instance:  
             queryset = queryset.exclude(pk=self.instance.pk)
         
         if queryset.exists():
@@ -54,6 +54,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = [
+            'id',
             'name',
             'description',
             'parent_category',
@@ -126,23 +127,45 @@ class CategoryBulkSerializer(serializers.Serializer):
 class VariationOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = VariationOption
-        fields = ['variation', 'value']
+        fields = ['id', 'value', 'variation']  # Inclure id pour la réponse
+        read_only_fields = ['variation']  # Empêche la modification directe
 
+    def validate_value(self, value):
+        """Validation personnalisée pour la valeur"""
+        if not value.strip():
+            raise serializers.ValidationError("La valeur ne peut pas être vide")
+        return value.strip()
 
 class VariationSerializer(serializers.ModelSerializer):
-    options = VariationOptionSerializer(many=True)
+    options = VariationOptionSerializer(many=True, required=False)
 
     class Meta:
         model = Variation
         fields = ['id', 'category', 'name', 'options']
+        extra_kwargs = {
+            'options': {'required': False, 'write_only': True}  # Cache dans la réponse
+        }
 
     def create(self, validated_data):
-        options_data = validated_data.pop('options', [])
-        variation = Variation.objects.create(**validated_data)
-        for option_data in options_data:
-            VariationOption.objects.create(variation=variation, **option_data)
-        return variation
+        with transaction.atomic():  # Transaction atomique
+            options_data = validated_data.pop('options', [])
+            variation = super().create(validated_data)
+            
+            # Création en masse avec validation
+            options = [
+                VariationOption(variation=variation, value=option['value'])
+                for option in options_data
+            ]
+            VariationOption.objects.bulk_create(options)
+            
+            return variation
 
+    def to_representation(self, instance):
+        """Surcharge pour inclure les options dans la réponse"""
+        representation = super().to_representation(instance)
+        representation['options'] = VariationOptionSerializer(
+            instance.variationoption_set.all(), many=True).data
+        return representation
 #####------------------products
 # Products/serializers.py
 

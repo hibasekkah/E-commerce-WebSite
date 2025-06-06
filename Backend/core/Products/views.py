@@ -64,7 +64,7 @@ class CategorylistView(APIView):
             }, status=status.HTTP_200_OK)
 
 class VariationViewSet(viewsets.ModelViewSet):
-    queryset = Variation.objects.all()
+    queryset = Variation.objects.prefetch_related('variationoption_set').all()
     serializer_class = VariationSerializer
 
     def get_queryset(self):
