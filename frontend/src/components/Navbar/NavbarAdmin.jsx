@@ -21,8 +21,14 @@ const ProfileElements = [
 
 const handleProfileAction = (action) => {
   if (action === 'logout') {
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    localStorage.removeItem("phone");
+    localStorage.removeItem("dob");
+    localStorage.removeItem("gender");
     // Optional: Redirect to homepage or login
     window.location.href = '/';
   }
@@ -101,7 +107,6 @@ export default function NavbarAdmin({username}) {
                   </ul>
                 </div>
               </div>
-
             </div>
 
             {/* Dark mode switch */}
