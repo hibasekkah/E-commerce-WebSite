@@ -167,77 +167,88 @@ class VariationSerializer(serializers.ModelSerializer):
             instance.variationoption_set.all(), many=True).data
         return representation
 #####------------------products
-# Products/serializers.py
-
-# from rest_framework import serializers
-# from .models import (
-#     Product, ProductItem, ProductConfiguration,
-#     ProductImage, Category, VariationOption
-# )
-
-# class ProductImageSerializer(serializers.ModelSerializer):
-#     image_url = serializers.ReadOnlyField()
-
-#     class Meta:
-#         model = ProductImage
-#         fields = ['id', 'image', 'alt_text', 'display_order', 'image_url']
-
-
+################### configuration
 # class ProductConfigurationSerializer(serializers.ModelSerializer):
-#     variation_option = serializers.PrimaryKeyRelatedField(queryset=VariationOption.objects.all())
-
+#     """Serializer for product configurations"""
+#     variation_option_detail = VariationOptionSerializer(source='variation_option', read_only=True)
+    
 #     class Meta:
 #         model = ProductConfiguration
-#         fields = ['id', 'variation_option', 'display_order']
+#         fields = ['id', 'variation_option', 'variation_option_detail']
 
-
-# class ProductItemSerializer(serializers.ModelSerializer):
-#     images = ProductImageSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = ProductItem
-#         fields = [
-#             'product', 'name', 'description', 'price', 'stock_quantity',
-#             'sku', 'display_order', 'images'
-#         ]
-
-
-# class ProductSerializer(serializers.ModelSerializer):
-#     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-#     items = ProductItemSerializer(source='productitem_set', many=True, required=False)
-
-#     class Meta:
-#         model = Product
-#         fields = [
-#             'id', 'category', 'name', 'description', 'price', 'display_order',
-#             'created_at', 'updated_at', 'deleted_at', 'status',
-#             'tax_percentage', 'brand', 'brand_model',
-#             'items'
-#         ]
-
-class ProductConfigurationSerializer(serializers.ModelSerializer):
-    """Serializer for product configurations"""
-    variation_option_detail = VariationOptionSerializer(source='variation_option', read_only=True)
-    
-    class Meta:
-        model = ProductConfiguration
-        fields = ['id', 'variation_option', 'variation_option_detail', 'display_order']
-
-
-class ProductImageSerializer(serializers.ModelSerializer):
-    """Serializer for product images"""
+################## image product
+class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating product images"""
     image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'image_url', 'alt_text', 'display_order']
+        read_only_fields = ['id', 'image_url']
     
     def get_image_url(self, obj):
         return obj.image_url()
 
 
+from rest_framework import serializers
+from django.db import transaction
+from .models import (
+    Product, ProductItem, ProductImage, 
+    ProductConfiguration, VariationOption
+)
+
+# ==============================================================================
+#  1. READ-ONLY SERIALIZERS (For displaying data in responses)
+# ==============================================================================
+
+# class ProductImageSerializer(serializers.ModelSerializer):
+#     """READ-ONLY serializer for displaying ProductImage details."""
+#     image_url = serializers.CharField(source='image.url', read_only=True)
+
+#     class Meta:
+#         model = ProductImage
+#         fields = [
+#             'id', 'image_url', 'alt_text', 
+#             'is_primary', 'display_order'
+#         ]
+
+# In your serializers.py
+
+from rest_framework import serializers
+from django.db import transaction
+from .models import (
+    Product, ProductItem, ProductImage, 
+    ProductConfiguration, VariationOption
+)
+
+# ==============================================================================
+#  A. READ-ONLY SERIALIZERS (For formatting the JSON response)
+# ==============================================================================
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    """Formats ProductImage details for API responses."""
+    image_url = serializers.CharField(source='image.url', read_only=True)
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image_url', 'alt_text', 'is_primary', 'display_order']
+
+
+class ProductConfigurationSerializer(serializers.ModelSerializer):
+    """Formats ProductConfiguration details for API responses."""
+    variation_name = serializers.CharField(source='variation_option.variation.name', read_only=True)
+    value = serializers.CharField(source='variation_option.value', read_only=True)
+
+    class Meta:
+        model = ProductConfiguration
+        fields = ['id', 'variation_name', 'value']
+
+
 class ProductItemSerializer(serializers.ModelSerializer):
-    """Serializer for product items (variants)"""
+    """
+    The main READ-ONLY serializer used to display a ProductItem in a GET request
+    or after a successful creation/update.
+    """
     images = ProductImageSerializer(many=True, read_only=True)
     configurations = ProductConfigurationSerializer(
         source='productconfiguration_set', 
@@ -248,11 +259,169 @@ class ProductItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductItem
         fields = [
-            'id', 'name', 'price', 'description', 'stock_quantity', 
-            'sku', 'display_order', 'status', 'images', 'configurations',
+            'id', 'sku', 'price', 'stock_quantity', 
+            'display_order', 'status', 'images', 'configurations',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+
+
+# ==============================================================================
+#  B. WRITE-ONLY SERIALIZER (For processing the POST request)
+# ==============================================================================
+
+class ProductItemCreateSerializer(serializers.ModelSerializer):
+    """
+    The main WRITE-ONLY serializer for CREATING a new ProductItem.
+    It takes the raw data from your Postman request and turns it into database objects.
+    """
+    # This field expects a list of integers for the 'configurations' key.
+    configurations = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True
+    )
+    
+    # This field expects a list of files for the 'images' key.
+    images = serializers.ListField(
+        child=serializers.ImageField(allow_empty_file=False, use_url=False),
+        required=False,
+        write_only=True
+    )
+
+    class Meta:
+        model = ProductItem
+        fields = [
+            'product', 'price', 'stock_quantity', 'sku',
+            'display_order', 'status', 'configurations', 'images'
+        ]
+        extra_kwargs = {
+            'product': {'required': True},
+            'price': {'required': True},
+            'sku': {'required': False, 'allow_blank': True},
+        }
+
+    def validate_configurations(self, value):
+        """Checks if all provided VariationOption IDs are valid."""
+        if not value:
+            return []
+        
+        existing_ids = VariationOption.objects.filter(id__in=value).values_list('id', flat=True)
+        if len(existing_ids) != len(set(value)):
+            missing = list(set(value) - set(existing_ids))
+            raise serializers.ValidationError(f"Invalid VariationOption IDs: {missing}")
+        return list(set(value))
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Orchestrates the creation of the ProductItem and its related objects.
+        This method is called by serializer.save() when creating a new instance.
+        """
+        # Separate the related data from the main ProductItem data.
+        config_ids = validated_data.pop('configurations', [])
+        image_files = validated_data.pop('images', [])
+        
+        # Create the main ProductItem object.
+        product_item = ProductItem.objects.create(**validated_data)
+
+        # Create the configuration links.
+        if config_ids:
+            new_configs = [
+                ProductConfiguration(
+                    product_item=product_item, 
+                    variation_option_id=cid,
+                    display_order=i
+                )
+                for i, cid in enumerate(config_ids)
+            ]
+            ProductConfiguration.objects.bulk_create(new_configs)
+            
+        # Create the image objects.
+        if image_files:
+            for i, image_file in enumerate(image_files):
+                ProductImage.objects.create(
+                    product=product_item,
+                    image=image_file,
+                    alt_text=f"Image for {product_item.product.name}",
+                    is_primary=(i == 0),
+                    display_order=i
+                )
+            
+        return product_item
+
+class ProductItemUpdateSerializer(serializers.ModelSerializer):
+    """Enhanced serializer for updating product items with image support"""
+    configurations = ProductConfigurationSerializer(many=True, required=False)
+    images = ProductImageCreateUpdateSerializer(many=True, required=False)
+    
+    class Meta:
+        model = ProductItem
+        fields = [
+            'price', 'stock_quantity',
+            'display_order', 'status', 'configurations', 'images'
+        ]
+    
+    def validate_sku(self, value):
+        """Ensure SKU is unique if provided"""
+        if value:
+            existing = ProductItem.objects.filter(sku=value).exclude(id=self.instance.id)
+            if existing.exists():
+                raise serializers.ValidationError("SKU must be unique")
+        return value
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        configurations_data = validated_data.pop('configurations', None)
+        images_data = validated_data.pop('images', None)
+        
+        # Update product item fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Handle configurations update if provided
+        if configurations_data is not None:
+            # Delete existing configurations
+            instance.productconfiguration_set.all().delete()
+            
+            # Create new configurations
+            for config_data in configurations_data:
+                ProductConfiguration.objects.create(
+                    product_item=instance,
+                    **config_data
+                )
+        
+        # Handle images update if provided
+        if images_data is not None:
+            # Get existing images
+            existing_images = {img.id: img for img in instance.images.all()}
+            updated_image_ids = []
+            
+            for image_data in images_data:
+                image_id = image_data.get('id')
+                if image_id and image_id in existing_images:
+                    # Update existing image
+                    image = existing_images[image_id]
+                    for attr, value in image_data.items():
+                        if attr != 'id':
+                            setattr(image, attr, value)
+                    image.save()
+                    updated_image_ids.append(image_id)
+                else:
+                    # Create new image
+                    new_image = ProductImage.objects.create(
+                        product=instance,
+                        **image_data
+                    )
+                    updated_image_ids.append(new_image.id)
+            
+            # Delete images not in update
+            for image_id, image in existing_images.items():
+                if image_id not in updated_image_ids:
+                    image.delete()
+        
+        return instance
+
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -263,8 +432,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'category', 'category_name',
-            'status', 'brand', 'brand_model', 'display_order', 'items_count',
+            'id', 'name', 'description', 'category', 'category_name',
+            'status', 'display_order', 'items_count',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -274,41 +443,35 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for product retrieval"""
+    """Detailed serializer for product retrieval with full image support"""
     category_detail = CategorySerializer(source='category', read_only=True)
     items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'category', 'category_detail',
-            'status', 'brand', 'brand_model', 'tax_percentage', 'display_order',
+            'id', 'name', 'description', 'category', 'category_detail',
+            'status', 'display_order',
             'items', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating new products"""
-    items = ProductItemSerializer(many=True, required=False)
+    """Enhanced serializer for creating new products with items and images"""
+    items = ProductItemCreateSerializer(many=True, required=False)
     
     class Meta:
         model = Product
         fields = [
-            'name', 'description', 'price', 'category', 'status',
-            'brand', 'brand_model', 'tax_percentage', 'display_order', 'items'
+            'id', 'name', 'description', 'category',
+             'display_order', 'items'
         ]
     
     def validate_category(self, value):
         """Ensure category exists and is not deleted"""
         if value.deleted_at is not None:
             raise serializers.ValidationError("Cannot assign product to deleted category")
-        return value
-    
-    def validate_price(self, value):
-        """Ensure price is positive"""
-        if value < 0:
-            raise serializers.ValidationError("Price must be positive")
         return value
     
     @transaction.atomic
@@ -316,73 +479,131 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items', [])
         product = Product.objects.create(**validated_data)
         
-        # Create product items if provided
+        # Create product items with their configurations and images
         for item_data in items_data:
-            ProductItem.objects.create(product=product, **item_data)
+            configurations_data = item_data.pop('configurations', [])
+            images_data = item_data.pop('images', [])
+            
+            # Create product item
+            product_item = ProductItem.objects.create(product=product, **item_data)
+            
+            # Create configurations
+            for config_data in configurations_data:
+                ProductConfiguration.objects.create(
+                    product_item=product_item,
+                    **config_data
+                )
+            
+            # Create images
+            for image_data in images_data:
+                ProductImage.objects.create(
+                    product=product_item,
+                    **image_data
+                )
         
         return product
 
 
-class ProductUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating existing products"""
-    items = ProductItemSerializer(many=True, required=False)
+# In serializers.py
+from rest_framework import serializers
+from django.db import transaction
+from django.utils import timezone
+from .models import Product, ProductItem, ProductConfiguration, VariationOption
+
+# ==============================================================================
+#  A. The "Write" Serializer for a Single ProductItem
+# ==============================================================================
+# This is our robust, reusable serializer for creating/updating an item.
+# It accepts a simple list of IDs for configurations.
+
+class ProductItemWriteSerializer(serializers.ModelSerializer):
+    """
+    Handles creating and updating a single ProductItem.
+    Accepts 'configurations' as a simple list of VariationOption IDs.
+    """
+    # 'id' is made writable but not required. Its presence signals an update.
+    id = serializers.IntegerField(required=False)
     
+    configurations = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True
+    )
+
     class Meta:
-        model = Product
+        model = ProductItem
         fields = [
-            'name', 'description', 'price', 'category', 'status',
-            'brand', 'brand_model', 'tax_percentage', 'display_order', 'items'
+            'id', 'product', 'price', 'stock_quantity', 'sku',
+            'display_order', 'status', 'configurations'
         ]
-    
-    def validate_category(self, value):
-        """Ensure category exists and is not deleted"""
-        if value.deleted_at is not None:
-            raise serializers.ValidationError("Cannot assign product to deleted category")
-        return value
-    
-    def validate_price(self, value):
-        """Ensure price is positive"""
-        if value < 0:
-            raise serializers.ValidationError("Price must be positive")
-        return value
-    
-    @transaction.atomic
+        extra_kwargs = {
+            # 'product' is only needed when creating an item from scratch.
+            'product': {'required': False},
+        }
+
+    # Include the create and update methods from our previous final version.
+    # This is where all the logic for a single item lives.
+    # (The full code for this class was provided in previous answers)
+    def create(self, validated_data):
+        # ... logic to create an item and its configurations ...
+        config_ids = validated_data.pop('configurations', [])
+        product_item = ProductItem.objects.create(**validated_data)
+        if config_ids:
+            ProductConfiguration.objects.bulk_create([
+                ProductConfiguration(product_item=product_item, variation_option_id=cid)
+                for cid in config_ids
+            ])
+        return product_item
+
     def update(self, instance, validated_data):
-        items_data = validated_data.pop('items', None)
-        
-        # Update product fields
+        # ... logic to update an item and replace its configurations ...
+        config_ids = validated_data.pop('configurations', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
-        # Handle items update if provided
-        if items_data is not None:
-            # Get existing items
-            existing_items = {item.id: item for item in instance.productitem_set.all()}
-            updated_item_ids = []
-            
-            for item_data in items_data:
-                item_id = item_data.get('id')
-                if item_id and item_id in existing_items:
-                    # Update existing item
-                    item = existing_items[item_id]
-                    for attr, value in item_data.items():
-                        if attr != 'id':
-                            setattr(item, attr, value)
-                    item.save()
-                    updated_item_ids.append(item_id)
-                else:
-                    # Create new item
-                    new_item = ProductItem.objects.create(product=instance, **item_data)
-                    updated_item_ids.append(new_item.id)
-            
-            # Mark items not in update as deleted (soft delete)
-            for item_id, item in existing_items.items():
-                if item_id not in updated_item_ids:
-                    item.deleted_at = timezone.now()
-                    item.save()
-        
+        if config_ids is not None:
+            instance.productconfiguration_set.all().delete()
+            if config_ids:
+                ProductConfiguration.objects.bulk_create([
+                    ProductConfiguration(product_item=instance, variation_option_id=cid)
+                    for cid in config_ids
+                ])
         return instance
+
+
+# ==============================================================================
+#  B. The Top-Level "Write" Serializer for the Product
+# ==============================================================================
+# This is the main serializer for your update view.
+
+class ProductItemUpdateSerializer(serializers.ModelSerializer):
+    """WRITE-ONLY serializer for UPDATING an existing ProductItem."""
+    configurations = serializers.ListField(child=serializers.IntegerField(), required=False, write_only=True)
+    
+    class Meta:
+        model = ProductItem
+        fields = ['price', 'stock_quantity', 'sku', 'display_order', 'status', 'configurations']
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        config_ids = validated_data.pop('configurations', None)
+        instance = super().update(instance, validated_data)
+        if config_ids is not None:
+            instance.productconfiguration_set.all().delete()
+            if config_ids: ProductConfiguration.objects.bulk_create([ProductConfiguration(product_item=instance, variation_option_id=cid) for cid in config_ids])
+        return instance
+
+
+# --- For Product ---
+class ProductUpdateSerializer(serializers.ModelSerializer):
+    """
+    WRITE-ONLY serializer for UPDATING a Product. 
+    This version only updates the Product's own fields.
+    Item management is handled by the dedicated ProductItem endpoints.
+    """
+    class Meta:
+        model = Product
+        fields = ['name', 'description', 'category', 'status', 'display_order']
 
 
 class ProductDeleteSerializer(serializers.Serializer):
@@ -414,40 +635,83 @@ class ProductDeleteSerializer(serializers.Serializer):
 
 
 class ProductItemCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating product items separately"""
-    configurations = ProductConfigurationSerializer(many=True, required=False)
+    """
+    WRITE-ONLY serializer for CREATING a new ProductItem.
+    Accepts a list of VariationOption IDs and image files.
+    """
+    # This field expects a list of integers for the 'configurations' key from your form-data.
+    configurations = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True
+    )
     
+    # This field expects a list of files for the 'images' key from your form-data.
+    images = serializers.ListField(
+        child=serializers.ImageField(allow_empty_file=False, use_url=False),
+        required=False,
+        write_only=True
+    )
+
     class Meta:
         model = ProductItem
+        # These are the fields the API will accept for creation.
         fields = [
-            'product', 'name', 'price', 'description', 'stock_quantity',
-            'sku', 'display_order', 'status', 'configurations'
+            'product', 'price', 'stock_quantity', 'sku',
+            'display_order', 'status', 'configurations', 'images'
         ]
-    
-    def validate_product(self, value):
-        """Ensure product exists and is not deleted"""
-        if value.deleted_at is not None:
-            raise serializers.ValidationError("Cannot add items to deleted product")
-        return value
-    
-    def validate_sku(self, value):
-        """Ensure SKU is unique if provided"""
-        if value and ProductItem.objects.filter(sku=value).exists():
-            raise serializers.ValidationError("SKU must be unique")
-        return value
-    
+        extra_kwargs = {
+            'product': {'required': True},
+            'price': {'required': True},
+            'sku': {'required': False, 'allow_blank': True},
+        }
+
+    def validate_configurations(self, value):
+        """Checks if all provided VariationOption IDs are valid."""
+        if not value:
+            return []
+        
+        existing_ids = VariationOption.objects.filter(id__in=value).values_list('id', flat=True)
+        if len(existing_ids) != len(set(value)):
+            missing = list(set(value) - set(existing_ids))
+            raise serializers.ValidationError(f"Invalid VariationOption IDs: {missing}")
+        return list(set(value))
+
     @transaction.atomic
     def create(self, validated_data):
-        configurations_data = validated_data.pop('configurations', [])
+        """
+        This logic is called when `serializer.save()` is executed in the view.
+        It creates the ProductItem and all its related objects in one transaction.
+        """
+        # Separate the related data before creating the main ProductItem.
+        config_ids = validated_data.pop('configurations', [])
+        image_files = validated_data.pop('images', [])
+        
+        # Create the main ProductItem object.
         product_item = ProductItem.objects.create(**validated_data)
-        
-        # Create configurations if provided
-        for config_data in configurations_data:
-            ProductConfiguration.objects.create(
-                product_item=product_item,
-                **config_data
-            )
-        
+
+        # Create the ProductConfiguration links in bulk for efficiency.
+        if config_ids:
+            ProductConfiguration.objects.bulk_create([
+                ProductConfiguration(
+                    product_item=product_item, 
+                    variation_option_id=cid,
+                    display_order=i
+                )
+                for i, cid in enumerate(config_ids)
+            ])
+            
+        # Create the ProductImage objects.
+        if image_files:
+            for i, image_file in enumerate(image_files):
+                ProductImage.objects.create(
+                    product=product_item, # 'product' is the ForeignKey in the ProductImage model
+                    image=image_file,
+                    alt_text=f"Image for {product_item.product.name}",
+                    is_primary=(i == 0), # The first uploaded image is the primary one
+                    display_order=i
+                )
+            
         return product_item
 
 
@@ -458,17 +722,9 @@ class ProductItemUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductItem
         fields = [
-            'name', 'price', 'description', 'stock_quantity',
-            'sku', 'display_order', 'status', 'configurations'
+            'price', 'stock_quantity',
+             'display_order', 'status', 'configurations'
         ]
-    
-    def validate_sku(self, value):
-        """Ensure SKU is unique if provided"""
-        if value:
-            existing = ProductItem.objects.filter(sku=value).exclude(id=self.instance.id)
-            if existing.exists():
-                raise serializers.ValidationError("SKU must be unique")
-        return value
     
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -526,3 +782,39 @@ class ProductBulkStatusUpdateSerializer(serializers.Serializer):
         )
         
         return self.validated_data['product_ids']
+    
+class ProductImageBulkSerializer(serializers.Serializer):
+    """Serializer for bulk image operations on product items"""
+    product_item_id = serializers.IntegerField()
+    images = ProductImageCreateUpdateSerializer(many=True)
+    replace_all = serializers.BooleanField(default=False)
+    
+    def validate_product_item_id(self, value):
+        """Ensure product item exists"""
+        try:
+            ProductItem.objects.get(id=value, deleted_at__isnull=True)
+        except ProductItem.DoesNotExist:
+            raise serializers.ValidationError("Product item not found or deleted")
+        return value
+    
+    @transaction.atomic
+    def save(self):
+        """Save bulk images to product item"""
+        product_item = ProductItem.objects.get(id=self.validated_data['product_item_id'])
+        images_data = self.validated_data['images']
+        replace_all = self.validated_data['replace_all']
+        
+        if replace_all:
+            # Delete all existing images
+            product_item.images.all().delete()
+        
+        # Create new images
+        created_images = []
+        for image_data in images_data:
+            image = ProductImage.objects.create(
+                product=product_item,
+                **image_data
+            )
+            created_images.append(image)
+        
+        return created_images

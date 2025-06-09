@@ -105,15 +105,12 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, db_index=True)
     name = models.CharField(max_length=200, db_index=True)
     description = models.TextField()
-    price = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        validators=[MinValueValidator(0)]
-    )
+
     display_order = models.PositiveIntegerField(
         default=0,
         db_index=True,
-        help_text="Ordre d'affichage des produits en vedette"
+        help_text="Ordre d'affichage des produits en vedette",
+        blank=True, null=True,
     )
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -124,18 +121,12 @@ class Product(models.Model):
         default='ACTIVE',
         db_index=True
     )
-    tax_percentage = models.FloatField(
-        validators=[MinValueValidator(0), MaxValueValidator(100)],blank=True, null=True,
-    )
-    brand = models.CharField(max_length=255, db_index=True,blank=True, null=True,)
-    brand_model = models.CharField(max_length=255,blank=True, null=True,)
 
     class Meta:
         ordering = ['display_order', '-created_at']
         indexes = [
             models.Index(fields=['status', 'deleted_at']),
             models.Index(fields=['category', 'status']),
-            models.Index(fields=['brand', 'status']),
             models.Index(fields=['created_at', 'status']),
             models.Index(fields=['category', 'display_order', 'status']),
         ]
@@ -151,13 +142,11 @@ class ProductItem(models.Model):
     ]
     
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_index=True)
-    name = models.CharField(max_length=200)
     price = models.DecimalField(
         max_digits=10, 
         decimal_places=2,
         validators=[MinValueValidator(0)]
     )
-    description = models.TextField()
     stock_quantity = models.PositiveIntegerField(default=0)
     sku = models.CharField(max_length=100, unique=True, db_index=True, blank=True, null=True,)
     display_order = models.PositiveIntegerField(
@@ -175,7 +164,7 @@ class ProductItem(models.Model):
     )
 
     class Meta:
-        ordering = ['display_order', 'name']
+        ordering = ['display_order']
         indexes = [
             models.Index(fields=['product', 'status']),
             models.Index(fields=['sku']),
@@ -183,8 +172,6 @@ class ProductItem(models.Model):
             models.Index(fields=['product', 'display_order']),
         ]
 
-    def __str__(self):
-        return f"{self.product.name} - {self.name}"
 
 class ProductConfiguration(models.Model):
     product_item = models.ForeignKey(ProductItem, on_delete=models.CASCADE, db_index=True)
@@ -225,8 +212,6 @@ class ProductImage(models.Model):
             models.Index(fields=['product', 'display_order']),
         ]
 
-    def __str__(self):
-        return f"Image for {self.product.name}"
 
     def image_url(self):
         if self.image and hasattr(self.image, 'url'):

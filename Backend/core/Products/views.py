@@ -1,10 +1,11 @@
+from datetime import timezone
 from django.shortcuts import render
 
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions,viewsets
-from .serializers import CategoryListSerializer, CategorySerializer,  VariationOptionSerializer, VariationSerializer
+from .serializers import CategoryListSerializer, CategorySerializer, ProductItemSerializer, ProductItemUpdateSerializer,  VariationOptionSerializer, VariationSerializer
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -90,12 +91,15 @@ class VariationOptionViewSet(viewsets.ModelViewSet):
 
 # Products/views.py
 
+# Enhanced Product Views with Image Handling
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
-from .models import Product, ProductItem
+from .models import Product, ProductItem, ProductImage
 from .serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -103,13 +107,15 @@ from .serializers import (
     ProductUpdateSerializer,
     ProductDeleteSerializer,
     ProductItemCreateSerializer,
-    ProductItemUpdateSerializer,
-    ProductBulkStatusUpdateSerializer
+    ProductBulkStatusUpdateSerializer,
+    ProductImageBulkSerializer,
+    ProductImageCreateUpdateSerializer
 )
 
+
 class ProductListView(APIView):
-    """List all products or create a new product"""
-    permission_classes = [IsAuthenticated]
+    """List all products or create a new product with image support"""
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
         products = Product.objects.filter(deleted_at__isnull=True)
@@ -121,13 +127,10 @@ class ProductListView(APIView):
         })
 
     def post(self, request):
-        if not request.user.is_staff:
-            return Response(
-                {'error': 'Only admin users can create products'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = ProductCreateSerializer(data=request.data, context={'request': request})
+        # Parse the request data
+        data = request.data.copy()
+        
+        serializer = ProductCreateSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             product = serializer.save()
             return Response(
@@ -137,8 +140,8 @@ class ProductListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProductDetailView(APIView):
-    """Retrieve, update or delete a product instance"""
-    permission_classes = [IsAuthenticated]
+    """Retrieve, update or delete a product instance with image support"""
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self, pk):
         try:
@@ -165,16 +168,27 @@ class ProductDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if not request.user.is_staff:
-            return Response(
-                {'error': 'Only admin users can update products'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # if not request.user.is_staff:
+        #     return Response(
+        #         {'error': 'Only admin users can update products'},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
 
         serializer = ProductUpdateSerializer(product, data=request.data, context={'request': request})
         if serializer.is_valid():
             product = serializer.save()
             return Response(ProductDetailSerializer(product, context={'request': request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk):
+        product = self.get_object(pk)
+        if not product: return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Use the simple ProductUpdateSerializer that only updates product fields
+        serializer = ProductUpdateSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            product = serializer.save()
+            return Response(ProductDetailSerializer(product).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -185,11 +199,11 @@ class ProductDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if not request.user.is_staff:
-            return Response(
-                {'error': 'Only admin users can delete products'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # if not request.user.is_staff:
+        #     return Response(
+        #         {'error': 'Only admin users can delete products'},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
 
         delete_serializer = ProductDeleteSerializer(data=request.data)
         if not delete_serializer.is_valid():
@@ -197,22 +211,93 @@ class ProductDetailView(APIView):
 
         delete_serializer.save(product)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class ProductItemDetailView(APIView):
+    """API endpoint to retrieve, update, and delete a single ProductItem."""
+    parser_classes = [MultiPartParser, FormParser]
 
-class ProductItemView(APIView):
-    """Create or update product items"""
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get_object(self, pk):
+        try:
+            return ProductItem.objects.get(pk=pk, deleted_at__isnull=True)
+        except ProductItem.DoesNotExist:
+            return None
 
-    def post(self, request):
-        serializer = ProductItemCreateSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            product_item = serializer.save()
-            return Response(
-                ProductItemCreateSerializer(product_item, context={'request': request}).data,
-                status=status.HTTP_201_CREATED
-            )
+    def get(self, request, pk):
+        item = self.get_object(pk)
+        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductItemSerializer(item)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        item = self.get_object(pk)
+        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Prepare data correctly, similar to the create view
+        data = {key: value for key, value in request.data.items()}
+        data['configurations'] = request.POST.getlist('configurations')
+        # Handle images if you are updating them too
+        # data['images'] = request.FILES.getlist('images')
+
+        serializer = ProductItemUpdateSerializer(item, data=data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            item = serializer.save()
+            return Response(ProductItemSerializer(item).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        item = self.get_object(pk)
+        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        item.deleted_at = timezone.now()
+        item.status = 'INACTIVE'
+        item.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def put(self, request, item_id):
+
+class ProductItemCreateView(APIView):
+    """
+    API endpoint dedicated to creating a new ProductItem.
+    Listens for POST requests at its configured URL.
+    """
+    # These parsers are required to handle `multipart/form-data` from Postman.
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handles the POST request to create a ProductItem.
+        """
+        # This is the CRITICAL step that fixes previous issues.
+        # We build a clean Python dictionary, making sure to use .getlist()
+        # for fields that can have multiple values.
+        data_for_serializer = {
+            'product': request.data.get('product'),
+            'price': request.data.get('price'),
+            'stock_quantity': request.data.get('stock_quantity'),
+            'sku': request.data.get('sku'),
+            'display_order': request.data.get('display_order'),
+            'status': request.data.get('status', 'ACTIVE'), # Default to ACTIVE
+            'configurations': request.POST.getlist('configurations'),
+            'images': request.FILES.getlist('images')
+        }
+
+        # 1. Use the "write" serializer to process the incoming data.
+        serializer = ProductItemCreateSerializer(data=data_for_serializer)
+        
+        # 2. If the data is invalid, this will automatically return a 400 error.
+        if serializer.is_valid(raise_exception=True):
+            # 3. If valid, .save() calls our custom .create() method in the serializer.
+            product_item = serializer.save()
+            
+            # 4. On success, use the "read" serializer to format a detailed JSON response.
+            # (ProductItemSerializer should be your serializer for GET requests)
+            response_serializer = ProductItemSerializer(product_item)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        
+class ProductImageView(APIView):
+    """Handle product item images"""
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def post(self, request, item_id):
+        """Add images to a product item"""
         try:
             product_item = ProductItem.objects.get(pk=item_id, deleted_at__isnull=True)
         except ProductItem.DoesNotExist:
@@ -220,18 +305,114 @@ class ProductItemView(APIView):
                 {'error': 'Product item not found or deleted'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        serializer = ProductItemUpdateSerializer(product_item, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            product_item = serializer.save()
+        
+        # Handle multiple image upload
+        images = request.FILES.getlist('images')
+        if not images:
             return Response(
-                ProductItemUpdateSerializer(product_item, context={'request': request}).data
+                {'error': 'No images provided'},
+                status=status.HTTP_400_BAD_REQUEST
             )
+        
+        created_images = []
+        try:
+            with transaction.atomic():
+                for i, image_file in enumerate(images):
+                    image_data = {
+                        'image': image_file,
+                        'alt_text': request.data.get('alt_text', f"Image for {product_item.name}"),
+                        'display_order': request.data.get('display_order', i),
+                        'is_primary': request.data.get('is_primary', i == 0)
+                    }
+                    
+                    serializer = ProductImageCreateUpdateSerializer(data=image_data)
+                    if serializer.is_valid():
+                        image = serializer.save(product=product_item)
+                        created_images.append(image)
+                    else:
+                        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response({
+                'success': True,
+                'message': f'Successfully uploaded {len(created_images)} images',
+                'images': ProductImageCreateUpdateSerializer(created_images, many=True).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Error uploading images: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def put(self, request, item_id, image_id):
+        """Update a specific image"""
+        try:
+            product_item = ProductItem.objects.get(pk=item_id, deleted_at__isnull=True)
+            image = ProductImage.objects.get(pk=image_id, product=product_item)
+        except (ProductItem.DoesNotExist, ProductImage.DoesNotExist):
+            return Response(
+                {'error': 'Product item or image not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProductImageCreateUpdateSerializer(image, data=request.data, partial=True)
+        if serializer.is_valid():
+            image = serializer.save()
+            return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, item_id, image_id):
+        """Delete a specific image"""
+        try:
+            product_item = ProductItem.objects.get(pk=item_id, deleted_at__isnull=True)
+            image = ProductImage.objects.get(pk=image_id, product=product_item)
+        except (ProductItem.DoesNotExist, ProductImage.DoesNotExist):
+            return Response(
+                {'error': 'Product item or image not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        image.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    def get(self, request, item_id):
+        """Get all images for a product item"""
+        try:
+            product_item = ProductItem.objects.get(pk=item_id, deleted_at__isnull=True)
+        except ProductItem.DoesNotExist:
+            return Response(
+                {'error': 'Product item not found or deleted'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        images = product_item.images.all()
+        serializer = ProductImageCreateUpdateSerializer(images, many=True)
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'images': serializer.data
+        })
+
+
+class ProductImageBulkView(APIView):
+    """Handle bulk image operations"""
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def post(self, request):
+        """Bulk upload images to a product item"""
+        serializer = ProductImageBulkSerializer(data=request.data)
+        if serializer.is_valid():
+            created_images = serializer.save()
+            return Response({
+                'success': True,
+                'message': f'Successfully created {len(created_images)} images',
+                'images': ProductImageCreateUpdateSerializer(created_images, many=True).data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProductBulkStatusView(APIView):
     """Bulk update product statuses"""
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request):
         serializer = ProductBulkStatusUpdateSerializer(data=request.data)
@@ -243,6 +424,3 @@ class ProductBulkStatusView(APIView):
                 'product_ids': product_ids
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-
-        
