@@ -224,29 +224,33 @@ class ProductItemDetailView(APIView):
 
     def get(self, request, pk):
         item = self.get_object(pk)
-        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ProductItemSerializer(item)
+        if not item: 
+            return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductItemSerializer(item) # Assuming you have a read-serializer
         return Response(serializer.data)
 
     def put(self, request, pk):
         item = self.get_object(pk)
-        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        if not item: 
+            return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Prepare data correctly, similar to the create view
-        data = {key: value for key, value in request.data.items()}
-        data['configurations'] = request.POST.getlist('configurations')
-        # Handle images if you are updating them too
-        # data['images'] = request.FILES.getlist('images')
-
-        serializer = ProductItemUpdateSerializer(item, data=data, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            item = serializer.save()
-            return Response(ProductItemSerializer(item).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # FIX: Pass request.data directly to the serializer.
+        # ListField is smart enough to handle a QueryDict from form data correctly.
+        # No manual data preparation is needed.
+        serializer = ProductItemUpdateSerializer(item, data=request.data, partial=True)
+        
+        # The raise_exception=True will handle invalid data and return a 400 response automatically.
+        serializer.is_valid(raise_exception=True)
+        item = serializer.save()
+        
+        # Return the updated object using your read-serializer for consistency.
+        return Response(ProductItemSerializer(item).data)
     
     def delete(self, request, pk):
         item = self.get_object(pk)
-        if not item: return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        if not item: 
+            return Response({"error": "Product Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         item.deleted_at = timezone.now()
         item.status = 'INACTIVE'
         item.save()
@@ -320,7 +324,7 @@ class ProductImageView(APIView):
                 for i, image_file in enumerate(images):
                     image_data = {
                         'image': image_file,
-                        'alt_text': request.data.get('alt_text', f"Image for {product_item.name}"),
+                        'alt_text': request.data.get('alt_text', f"Image for {product_item}"),
                         'display_order': request.data.get('display_order', i),
                         'is_primary': request.data.get('is_primary', i == 0)
                     }
@@ -372,7 +376,7 @@ class ProductImageView(APIView):
             )
         
         image.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'success'},status=status.HTTP_204_NO_CONTENT)
     
     def get(self, request, item_id):
         """Get all images for a product item"""

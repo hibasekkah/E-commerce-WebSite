@@ -266,9 +266,6 @@ class PromotionProduct(models.Model):
             models.Index(fields=['promotion', 'created_at']),
         ]
 
-    def __str__(self):
-        return f"{self.product.name} - {self.promotion.name}"
-
 class ProductQuestion(models.Model):
     STATUS_CHOICES = [
         ('ACTIVE', 'Active'),

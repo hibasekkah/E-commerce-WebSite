@@ -578,7 +578,12 @@ class ProductItemWriteSerializer(serializers.ModelSerializer):
 
 class ProductItemUpdateSerializer(serializers.ModelSerializer):
     """WRITE-ONLY serializer for UPDATING an existing ProductItem."""
-    configurations = serializers.ListField(child=serializers.IntegerField(), required=False, write_only=True)
+    # This field definition is correct.
+    configurations = serializers.ListField(
+        child=serializers.IntegerField(), 
+        required=False, 
+        write_only=True
+    )
     
     class Meta:
         model = ProductItem
@@ -586,11 +591,35 @@ class ProductItemUpdateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        # Pop the configurations list before calling the parent update method.
         config_ids = validated_data.pop('configurations', None)
+        
+        # Update the simple fields on the ProductItem instance.
         instance = super().update(instance, validated_data)
+
+        # If a list of configurations was provided, update the relationship.
         if config_ids is not None:
-            instance.productconfiguration_set.all().delete()
-            if config_ids: ProductConfiguration.objects.bulk_create([ProductConfiguration(product_item=instance, variation_option_id=cid) for cid in config_ids])
+            # More efficient update: only add/remove what's necessary.
+            current_config_ids = set(instance.productconfiguration_set.values_list('variation_option_id', flat=True))
+            new_config_ids = set(config_ids)
+
+            # 1. Delete configurations that are no longer in the list.
+            ids_to_delete = current_config_ids - new_config_ids
+            if ids_to_delete:
+                instance.productconfiguration_set.filter(variation_option_id__in=ids_to_delete).delete()
+
+            # 2. Create new configurations that were added to the list.
+            ids_to_create = new_config_ids - current_config_ids
+            if ids_to_create:
+                # Optional but recommended: Check if all provided IDs are valid VariationOption objects.
+                if VariationOption.objects.filter(id__in=ids_to_create).count() != len(ids_to_create):
+                    raise serializers.ValidationError({"configurations": "One or more invalid VariationOption IDs provided."})
+
+                ProductConfiguration.objects.bulk_create([
+                    ProductConfiguration(product_item=instance, variation_option_id=cid)
+                    for cid in ids_to_create
+                ])
+                
         return instance
 
 
