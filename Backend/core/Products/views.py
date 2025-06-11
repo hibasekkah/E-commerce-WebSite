@@ -159,26 +159,6 @@ class ProductDetailView(APIView):
 
         serializer = ProductDetailSerializer(product, context={'request': request})
         return Response(serializer.data)
-
-    def put(self, request, pk):
-        product = self.get_object(pk)
-        if not product:
-            return Response(
-                {'error': 'Product not found or has been deleted'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # if not request.user.is_staff:
-        #     return Response(
-        #         {'error': 'Only admin users can update products'},
-        #         status=status.HTTP_403_FORBIDDEN
-        #     )
-
-        serializer = ProductUpdateSerializer(product, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            product = serializer.save()
-            return Response(ProductDetailSerializer(product, context={'request': request}).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, pk):
         product = self.get_object(pk)

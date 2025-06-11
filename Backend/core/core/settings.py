@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'Users',
     'Products',
     'Carts',
+    'Orders',
     'rest_framework',  # Django REST Framework
     'rest_framework_simplejwt',  # Simple JWT
     'corsheaders',
