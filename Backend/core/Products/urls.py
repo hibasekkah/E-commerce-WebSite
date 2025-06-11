@@ -3,7 +3,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemCreateView, ProductItemDetailView, ProductListView,
+    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemCreateView, ProductItemDetailView, ProductListView, PromotionListCreateAPIView, PromotionRetrieveUpdateDestroyAPIView,
     VariationViewSet, VariationOptionViewSet
 )
 
@@ -31,4 +31,7 @@ urlpatterns = [
     path('product-items/<int:item_id>/images/', ProductImageView.as_view(), name='product-images'),
     path('product-items/<int:item_id>/images/<int:image_id>/', ProductImageView.as_view(), name='product-image-detail'),
     path('product-images/bulk/', ProductImageBulkView.as_view(), name='product-images-bulk'),
+
+    path('promotions/', PromotionListCreateAPIView.as_view(), name='promotion-list-create'),
+    path('promotions/<int:pk>/', PromotionRetrieveUpdateDestroyAPIView.as_view(), name='promotion-detail'),
 ]

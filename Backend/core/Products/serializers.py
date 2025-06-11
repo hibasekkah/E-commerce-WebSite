@@ -813,6 +813,7 @@ class ProductBulkStatusUpdateSerializer(serializers.Serializer):
         return self.validated_data['product_ids']
     
 class ProductImageBulkSerializer(serializers.Serializer):
+
     """Serializer for bulk image operations on product items"""
     product_item_id = serializers.IntegerField()
     images = ProductImageCreateUpdateSerializer(many=True)
@@ -847,3 +848,126 @@ class ProductImageBulkSerializer(serializers.Serializer):
             created_images.append(image)
         
         return created_images
+    
+
+
+from rest_framework import serializers
+from .models import Promotion, PromotionProduct, ProductItem
+
+class ProductItemForPromotionSerializer(serializers.ModelSerializer):
+    """
+    A lightweight serializer to represent a ProductItem within a promotion list.
+    """
+    class Meta:
+        model = ProductItem
+        fields = ['id', 'sku', 'price'] # Add any other fields you want to see here
+
+class PromotionProductSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the 'through' model, showing the product details.
+    """
+    product = ProductItemForPromotionSerializer(read_only=True)
+
+    class Meta:
+        model = PromotionProduct
+        fields = ['id', 'product', 'display_order']
+
+
+class PromotionSerializer(serializers.ModelSerializer):
+    """
+    READ-ONLY serializer for listing and retrieving Promotions.
+    Includes a nested list of all associated products.
+    """
+    # Uses the related_name 'products' we added to the model
+    products = PromotionProductSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Promotion
+        fields = [
+            'id', 
+            'name', 
+            'description', 
+            'discount_rate', 
+            'start_date', 
+            'end_date', 
+            'is_active', 
+            'display_order',
+            'products', # Nested list of products in the promotion
+            'created_at',
+            'updated_at',
+        ]
+
+
+class PromotionCreateUpdateSerializer(serializers.ModelSerializer):
+    """
+    WRITE-ONLY serializer for creating and updating Promotions.
+    Accepts a list of product item IDs to associate with the promotion.
+    """
+    # This field will accept a list of integers (ProductItem IDs)
+    product_items = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False,
+        help_text="A list of ProductItem IDs to include in this promotion."
+    )
+
+    class Meta:
+        model = Promotion
+        fields = [
+            'name', 
+            'description', 
+            'discount_rate', 
+            'start_date', 
+            'end_date', 
+            'is_active', 
+            'display_order',
+            'product_items',
+        ]
+
+    def create(self, validated_data):
+        """
+        Handle creating a Promotion and its associated ProductItems.
+        """
+        product_item_ids = validated_data.pop('product_items', [])
+        promotion = Promotion.objects.create(**validated_data)
+
+        if product_item_ids:
+            # Create the links in the through model
+            promo_products = [
+                PromotionProduct(promotion=promotion, product_id=pid)
+                for pid in product_item_ids
+            ]
+            PromotionProduct.objects.bulk_create(promo_products)
+        
+        return promotion
+
+    def update(self, instance, validated_data):
+        """
+        Handle updating a Promotion and its associated ProductItems.
+        """
+        product_item_ids = validated_data.pop('product_items', None)
+        
+        # Update the Promotion instance itself
+        instance = super().update(instance, validated_data)
+
+        # If a list of product_items was provided, update the relationship
+        if product_item_ids is not None:
+            # Easiest way to handle updates: delete old links and create new ones.
+            instance.products.all().delete()
+            
+            promo_products = [
+                PromotionProduct(promotion=instance, product_id=pid)
+                for pid in product_item_ids
+            ]
+            PromotionProduct.objects.bulk_create(promo_products)
+
+        return instance
+    
+
+
+class ProductItemReadOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductItem
+        fields = ['id', 'sku', 'product'] # Add name from product if needed
+        # Example to get product name:
+        # name = serializers.CharField(source='product.name', read_only=True)

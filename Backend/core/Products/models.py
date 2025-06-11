@@ -251,7 +251,7 @@ class Promotion(models.Model):
 
 class PromotionProduct(models.Model):
     product = models.ForeignKey(ProductItem, on_delete=models.CASCADE, db_index=True)
-    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, db_index=True)
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, db_index=True,related_name='products')
     display_order = models.PositiveIntegerField(
         default=0,
         help_text="Ordre d'affichage des produits en promotion"

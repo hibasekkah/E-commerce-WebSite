@@ -142,6 +142,14 @@ class PasswordUpdateSerializer(serializers.Serializer):
         user.save()
         return user
     
+from rest_framework import serializers
+from .models import UserShippingAddress
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserShippingAddress
+        fields = ['id', 'street_address', 'city', 'state', 'postal_code', 'country']
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """

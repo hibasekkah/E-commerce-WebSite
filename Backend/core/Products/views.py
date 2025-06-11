@@ -415,6 +415,7 @@ class ProductImageBulkView(APIView):
 
 
 class ProductBulkStatusView(APIView):
+
     """Bulk update product statuses"""
     # permission_classes = [IsAuthenticated, IsAdminUser]
 
@@ -428,3 +429,45 @@ class ProductBulkStatusView(APIView):
                 'product_ids': product_ids
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+from rest_framework import generics, status
+from rest_framework.response import Response
+from .models import Promotion
+from .serializers import PromotionSerializer, PromotionCreateUpdateSerializer
+
+class PromotionListCreateAPIView(generics.ListCreateAPIView):
+    """
+    API endpoint for listing all promotions or creating a new one.
+    - GET: Returns a list of all active promotions with their products.
+    - POST: Creates a new promotion.
+    """
+    # Prefetch related products to avoid N+1 query issues on list view
+    queryset = Promotion.objects.filter(is_active=True).prefetch_related('products__product')
+
+    def get_serializer_class(self):
+        """
+        Use PromotionCreateUpdateSerializer for POST requests (creating),
+        and PromotionSerializer for GET requests (listing).
+        """
+        if self.request.method == 'POST':
+            return PromotionCreateUpdateSerializer
+        return PromotionSerializer
+
+class PromotionRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint for retrieving, updating, or deleting a single promotion.
+    - GET: Retrieve a single promotion's details.
+    - PUT/PATCH: Update a promotion.
+    - DELETE: Delete a promotion.
+    """
+    queryset = Promotion.objects.all().prefetch_related('products__product')
+    
+    def get_serializer_class(self):
+        """
+        Use PromotionCreateUpdateSerializer for updates (PUT/PATCH),
+        and PromotionSerializer for retrieval (GET).
+        """
+        if self.request.method in ['PUT', 'PATCH']:
+            return PromotionCreateUpdateSerializer
+        return PromotionSerializer
