@@ -23,6 +23,9 @@ import AdminPage from "./components/AdminPage";
 import Addresses from "./components/Account/Addresses";
 import ProfilePage from "./components/Account/ProfilePage";
 import PasswordPage from "./components/Account/PasswordPage";
+import SidebarProduct from "./components/Sidebar/SidebarProduct";
+import AddProdPage from "./components/Product/AddProdPage";
+import VariantProdPage from "./components/Product/VariantProdPage";
 
 
 const Products = [
@@ -111,6 +114,17 @@ function App() {
                 <SidebarAccount />
                 <Addresses />
               </div>
+            } />
+            <Route path='/Product'  element = {
+              <div className="flex">
+                <SidebarProduct />
+              </div>
+            }/>
+            <Route path='/Product/Add' element = {
+              <AddProdPage />
+            } />
+            <Route path='/Product/Add/Variants' element = {
+              <VariantProdPage />
             } />
           </Routes>
         <Footer />

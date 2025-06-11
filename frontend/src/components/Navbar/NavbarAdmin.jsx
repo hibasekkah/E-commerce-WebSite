@@ -8,7 +8,7 @@ import { CgProfile } from "react-icons/cg";
 
 const Menu = [
   { id: 1, name: 'Dashboard', link: '#' },
-  { id: 2, name: 'Products', link: '#' },
+  { id: 2, name: 'Products', link: '/Product' },
   { id: 3, name: 'Orders', link: '#' },
   { id: 4, name: 'Customer Support', link: '/#' },
   { id: 5, name: 'Promotions', link: '/#'}
@@ -44,6 +44,8 @@ export default function NavbarAdmin({username}) {
   const modalRegisterRef = useRef();
 
   const role = localStorage.getItem('role') || '';
+
+  const currentPath = window.location.pathname;
 
   const handleClickOutside = (event) => {
     if (modalLoginRef.current && !modalLoginRef.current.contains(event.target)) {
@@ -130,9 +132,13 @@ export default function NavbarAdmin({username}) {
         <ul className='flex items-center gap-4'>
           {Menu.map((data) => (
             <li key={data.id}>
-              <a href={data.link} className='inline-block px-4 hover:text-primary duration-200'>
-                {data.name}
-              </a>
+               <button
+                  onClick={() =>  window.location.href = data.link}
+                  className={`flex items-center p-4 gap-3 cursor-pointer duration-200 ${
+                  currentPath === data.link ? 'text-primary font-semibold' : 'hover:text-primary' }`}
+                >
+                  {data.name}
+                </button>
             </li>
           ))}
         </ul>
