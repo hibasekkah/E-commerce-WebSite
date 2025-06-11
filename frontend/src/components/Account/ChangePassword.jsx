@@ -118,7 +118,7 @@ export default function ChangePassword() {
 
   return (
     <div className=" dark:bg-gray-900 dark:text-white flex justify-center">
-      <div className="py-4 px-10 border-2 border-secondary rounded-lg my-5 w-96">
+      <div className="py-4 px-10 border-2 border-secondary rounded-lg my-5 w-2/5">
         <h2 className="text-2xl font-medium mb-7 text-center text-secondary">Change Password</h2>
           <div className="mb-4">
             <input
