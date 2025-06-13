@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import CatProdDelete from './CatProdDelete';
 
 const prods = [
@@ -168,14 +168,42 @@ loadProdsCategorie();
 export default function ProdDelete() {
 
   let delay = 100;
+  const [searchValue, setSearchValue] = useState('');
+  const [searchType, setSearchType] = useState('');
   
   return (
-    <div className='my-5'>
-      {prodsCategories.map(cat => {
-        delay += 100;
-        return <CatProdDelete key={cat.id} catProds={cat} />
-      })}
+    <div className='mt-5'>
+      <div className='flex flex-col justify-center items-center'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 w-1/2'>
+          <input 
+            type='text'
+            value={searchValue}
+            placeholder="Enter your search..."
+            onChange={(e) => setSearchValue(e.target.value)}
+            className="border-2 p-2 mb-1 rounded-lg border-primary
+            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"                         
+          />
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+            className="border-2 p-2  mb-1 rounded-lg border-primary
+            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"  
+          >
+            <option value='' >Search By</option>
+            <option value='category' >Category</option>
+            <option value='productName' >Product name</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className='my-5'>
+        {prodsCategories.map(cat => {
+          delay += 100;
+          return <CatProdDelete key={cat.id} catProds={cat} 
+                  searchValue={searchValue} searchType={searchType} 
+                  />
+        })}
+      </div>
     </div>
-    
   )
 }
