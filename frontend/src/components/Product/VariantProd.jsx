@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import Item from './Item';
 import InputDimension from './InputDimension';
 
 function isNumber(value) {
@@ -12,19 +11,17 @@ export default function VariantProd() {
   const [dimensions, setDimensions] = useState({});
   const [variants, setVariants] = useState([]);
   const [currentVariant, setCurrentVariant] = useState({});
-  const [eCurrentVariant, setECurrentVariant] = useState({});
+  const [eCurrentVariant, setECurrentVariant] = useState({units: ['', '']});
   let variantDimensions = {};
-
-  console.log(productDetails);
-  console.log(variants);
+  const [inputKey, setInputKey] = useState(0);
 
   const removeItem = (index) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
+  const handleAddItem = () => {
     let isValid = true;
-    let errors = {};
+    let errors = {units: ['', '']};
 
     setECurrentVariant({});
 
@@ -48,18 +45,29 @@ export default function VariantProd() {
 
     if (productDetails.category === 'Home Decor' && productDetails.subCategory === 'Home Furniture') {
       variantDimensions = {};
-      if (!dimensions.height || dimensions.height <= 0) {
+      if (!dimensions.height || dimensions.height <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.height = "Please enter a valid height.";
+        if(!dimensions.height || dimensions.height <= 0) {
+          errors.height = "Please enter a valid height.";
+        } 
+        if(!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+          errors.units[0] = "Please select a unit."
+        }
       } else {
-        variantDimensions = {...variantDimensions, Height: dimensions.height};
+        variantDimensions = {...variantDimensions, Height: `${dimensions.height} ${dimensions.selectedUnits[0]}`};
       }
-      if (!dimensions.width || dimensions.width <= 0) {
+      if (!dimensions.width || dimensions.width <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[1]) {
         isValid = false;
-        errors.width = "Please enter a valid width.";
+        if(!dimensions.width || dimensions.width <= 0) {
+          errors.width = "Please enter a valid width.";
+        } 
+        if(!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[1]) {
+          errors.units[1] = "Please select a unit."
+        }
       } else {
-        variantDimensions = {... variantDimensions, Width: dimensions.width};
+        variantDimensions = {... variantDimensions, Width: `${dimensions.width} ${dimensions.selectedUnits[1]}`};
       }
+
     }
 
     if(productDetails.category === 'Home Decor' && productDetails.subCategory === 'Accessories'){
@@ -81,11 +89,17 @@ export default function VariantProd() {
     } 
 
     if(productDetails.category === 'Clothing & Textiles' && productDetails.subCategory === 'Textiles') {
-      if (!dimensions.length || dimensions.length <= 0) {
+      if(!dimensions.length || dimensions.length <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.length = "Please enter a valid length.";
-      } else {
-        variantDimensions = {Length: dimensions.length};
+        if (!dimensions.length || dimensions.length <= 0) {
+          errors.length = "Please enter a valid length.";
+        } 
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+          errors.units[0] = "Please select a unit."
+        } 
+      }
+      else {
+        variantDimensions = {Length: `${dimensions.length} ${dimensions.selectedUnits[0]}`};
       }
     } 
 
@@ -99,42 +113,68 @@ export default function VariantProd() {
     }
 
     if(productDetails.category === 'Natural Cosmetics' && productDetails.subCategory === 'Creams and Gels') {
-      if(!dimensions.creamWeight || dimensions.creamWeight <= 0) {
+      if(!dimensions.creamWeight || dimensions.creamWeight <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.creamWeight = "Please enter a valid weight.";
-      } else {
-        variantDimensions = {Weight: dimensions.creamWeight}
+        if (!dimensions.creamWeight || dimensions.creamWeight <= 0) {
+          errors.creamWeight = "Please enter a valid length.";
+        } 
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+          errors.units[0] = "Please select a unit."
+        } 
+      }
+      else {
+        variantDimensions = {Length: `${dimensions.creamWeight} ${dimensions.selectedUnits[0]}`};
       }
     }
 
     if(productDetails.category === 'Natural Cosmetics' && productDetails.subCategory === 'Liquids') {
-      if(!dimensions.cosmeticsVolume || dimensions.cosmeticsVolume <= 0) {
+      if(!dimensions.cosmeticsVolume || dimensions.cosmeticsVolume <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.cosmeticsVolume = "Please enter a valid volume.";
-      } else {
-        variantDimensions = {Volume: dimensions.cosmeticsVolume};
+        if(!dimensions.cosmeticsVolume || dimensions.cosmeticsVolume <= 0) { 
+          errors.cosmeticsVolume = "Please enter a valid volume.";
+        }
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+          errors.units[0] = "Please select a unit."
+        }
+      }
+       else {
+        variantDimensions = {Volume: `${dimensions.cosmeticsVolume} ${dimensions.selectedUnits[0]}`};
       }
     }
 
     if(productDetails.category === 'Food & Spices' && productDetails.subCategory === 'Liquids') {
-      if(!dimensions.foodVolume || dimensions.foodVolume <= 0) {
+      if (!dimensions.foodVolume || dimensions.foodVolume <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.foodVolume = "Please enter a valid volume.";
-      } else {
-        variantDimensions = {Volume: dimensions.foodVolume};
+        if(!dimensions.foodVolume || dimensions.foodVolume <= 0) {
+          errors.foodVolume = "Please enter a valid volume.";
+        } 
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+          isValid = false;
+          errors.units[0] = "Please select a unit."
+        } 
+      }
+      else {
+        variantDimensions = {Volume: `${dimensions.foodVolume} ${dimensions.selectedUnits[0]}`};
       }
     }
 
     if(productDetails.category === 'Food & Spices' && productDetails.subCategory === 'Solids') {
-      if(!dimensions.foodWeight || dimensions.foodWeight <= 0) {
+      if (!dimensions.foodWeight || dimensions.foodWeight <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        errors.foodWeight = "Please enter a valid weight.";
+        if (!dimensions.foodWeight || dimensions.foodWeight <= 0) {
+            errors.foodWeight = "Please enter a valid weight.";
+        }
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+            errors.units[0] = "Please select a unit.";
+        }
       } else {
-        variantDimensions = {Weight: dimensions.foodWeight}
+          variantDimensions = { Weight: `${dimensions.foodWeight} ${dimensions.selectedUnits[0]}` };
       }
+
     }
 
     const newVariant = {...currentVariant, variantDimensions};
+
 
     setCurrentVariant(newVariant);
     setECurrentVariant(errors);
@@ -144,6 +184,8 @@ export default function VariantProd() {
       // Réinitialiser currentVariant et erreurs
       setCurrentVariant({});
       setECurrentVariant({});
+      setDimensions({});
+      setInputKey(prev => prev + 1);
     }
   };
 
@@ -151,23 +193,15 @@ export default function VariantProd() {
 
   return (
     <div className=" dark:bg-gray-900 dark:text-white flex flex-col justify-center w-full">
-      <h2 className="text-2xl font-medium mb-8 mt-5 text-center text-secondary">Add Items</h2>
-      <div className='grid grid-cols-2 gap-20 mx-20 mb-10'>
-        {variants.map((element, index) => (
-            <Item 
-              key={index} 
-              element={element} index={index}
-              removeItem={removeItem}
-            />
-        ))}
-        <div className="py-4 px-8 border-2 border-secondary rounded-lg my-5 w-full">
+      <div className='flex justify-center'>
+        <div className="py-4 px-8 border-2 border-primary rounded-lg my-8 w-1/3">
           <div className="mb-4">
             <input
                 type="number"
                 placeholder="Price"
                 value={currentVariant.price || ''}
                 onChange={(e) => setCurrentVariant((v) => ({...v,price: Number(e.target.value)}))}
-                className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
+                className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                         dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
             /> 
 
@@ -181,7 +215,7 @@ export default function VariantProd() {
                 placeholder="Quantity"
                 value={currentVariant.quantity || ''}
                 onChange={(e) => setCurrentVariant((v) => ({...v,quantity: Number(e.target.value)}))}
-                className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
+                className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                         dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
             /> 
 
@@ -190,6 +224,7 @@ export default function VariantProd() {
             </div>
           </div>
           <InputDimension
+            key={inputKey}
             productDetails={productDetails}
             onChangeDimensions={(data) => setDimensions(data)}
             errors={eCurrentVariant}
@@ -203,7 +238,7 @@ export default function VariantProd() {
                   placeholder="Color"
                   value={currentVariant.color || ''}
                   onChange={(e) => setCurrentVariant((v) => ({...v,color: e.target.value}))}
-                  className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
+                  className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                           dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
               />  
               <div className="mb-5 text-primary">
@@ -218,22 +253,47 @@ export default function VariantProd() {
                 type="file"
                 placeholder="Image"
                 onChange={(e) => setCurrentVariant((v) => ({...v,image: e.target.files[0]}))}
-                className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
+                className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                         dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
             /> 
             <div className="mb-5 text-primary">
                 {eCurrentVariant.image}
             </div>
           </div>
-          
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 rounded bg-gradient-to-tr from-red-500 to-red-800 text-white hover:from-red-700 hover:to-red-700"
-          >
-            Save
-          </button>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+            <button
+              onClick={handleAddItem}
+              className="px-4 py-2 rounded bg-gradient-to-tr from-red-500 to-red-700 text-white hover:from-red-700 hover:to-red-700"
+            >
+              Add Item
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-gradient-to-tr from-red-500 to-red-700 text-white hover:from-red-700 hover:to-red-700"
+            >
+              Save Items
+            </button>
           </div>
+          
         </div>
       </div>
+      {variants.length ? 
+        <>
+          <h2 className="text-2xl font-medium mb-8 mt-5 text-center text-primary border-primary border-t-4 pt-3">Product Items</h2>
+          <div className='mx-10 mb-10 grid grid-cols-1 sm:grid-cols-2 gap-10'>
+            {variants.map((element, index) => (
+                <Item 
+                  key={index} 
+                  element={element} index={index}
+                  removeItem={removeItem}
+                />
+            ))}
+            
+          </div> 
+        </>
+        :
+        ''
+      }
+      
+    </div>
   )
 }

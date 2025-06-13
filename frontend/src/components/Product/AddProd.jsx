@@ -22,14 +22,8 @@ export default function AddProd() {
     const [eDescription, setEDescription] = useState('');
     const [eCategory, setECategory] = useState('');
     const [eSubCategory, SetESubCategory] = useState('');
-    const [eDisplayOrder, setEDisplayOrder] = useState('');
-    const [eBrand, setEBrand] = useState('');
-    const [message, setMessage] = useState("");
-    const [messageStatus, setMessageStatus] = useState(false);
+
     
-
-
-
     const handleCategoryChange = (e) => {
         const selectedName = e.target.value;
         const selectedCategory = categories.find(cat => cat.name === selectedName);
@@ -154,42 +148,14 @@ export default function AddProd() {
                         </div>
                     )
                 }
-                <div className="mb-4">
-                    <input
-                        type="number"
-                        placeholder="Enter a number from 1 to 10 to place this product in the Top 10."
-                        value={displayOrder}
-                        onChange={(e) => setDisplayOrder(e.target.value)}
-                        className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
-                                dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                    /> 
-
-                    <div className="mb-5 text-primary">
-                        {eDisplayOrder}
-                    </div>
-                </div>
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        placeholder="Brand Name"
-                        value={brand}
-                        onChange={(e) => setBrand(e.target.value)}
-                        className="border-2 p-2 w-full mb-1 rounded-lg border-secondary
-                                dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                    /> 
-
-                    <div className="mb-5 text-primary">
-                        {eBrand}
-                    </div>
-                    <div className="mb-4 flex flex-col gap-3">
-                        <p className={messageStatus ? 'text-primary' : 'text-blue-600'}>{message}</p>
-                        <button
-                        onClick={handleSave}
-                        className="px-4 py-2 w-full rounded bg-gradient-to-tr from-red-500 to-red-800 text-white hover:from-red-700 hover:to-red-700"
-                        >
-                            Next : Add Product Variants
-                        </button>
-                    </div>
+               
+                <div className="mb-4 flex flex-col gap-3">
+                    <button
+                    onClick={handleSave}
+                    className="px-4 py-2 w-full rounded bg-gradient-to-tr from-red-500 to-red-800 text-white hover:from-red-700 hover:to-red-700"
+                    >
+                        Next : Add Product Variants
+                    </button>
                 </div>
             </div>
         </div>
