@@ -36,6 +36,21 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
+    def get_descendant_ids(self):
+        """
+        Recursively finds all descendant category IDs for self, including self.
+        Returns a list of IDs.
+        """
+        descendants = [self.id]
+        
+        # Get immediate subcategories
+        subcategories = self.subcategories.all()
+        
+        # For each subcategory, recursively call this method and extend the list
+        for sub in subcategories:
+            descendants.extend(sub.get_descendant_ids())
+            
+        return list(set(descendants)) # Use set to ensure uniqueness
 
 
 def category_image_upload_path(instance, filename):
@@ -112,9 +127,10 @@ class Product(models.Model):
         help_text="Ordre d'affichage des produits en vedette",
         blank=True, null=True,
     )
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True) # FIX
+    updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True,)
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -153,9 +169,9 @@ class ProductItem(models.Model):
         default=0,
         help_text="Ordre d'affichage des déclinaisons de produit"
     )
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True,)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

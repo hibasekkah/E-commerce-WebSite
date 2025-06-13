@@ -3,13 +3,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemCreateView, ProductItemDetailView, ProductListView, PromotionListCreateAPIView, PromotionRetrieveUpdateDestroyAPIView,
+    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemDetailView, ProductItemStockAdjustView, ProductItemViewSet, ProductListView, PromotionListCreateAPIView, PromotionRetrieveUpdateDestroyAPIView,
     VariationViewSet, VariationOptionViewSet
 )
 
 router = DefaultRouter()
 router.register(r'variations', VariationViewSet, basename='variation')
 router.register(r'variation-options', VariationOptionViewSet, basename='variation-option')
+router.register(r'items', ProductItemViewSet, basename='product-item')
 
 
 urlpatterns = [
@@ -21,9 +22,9 @@ urlpatterns = [
     path('products/', ProductListView.as_view(), name='product-list-create'),
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
     path('products/bulk-status/', ProductBulkStatusView.as_view(), name='product-bulk-status'),
-    
-    # Product Item URLs
-    path('product-items/', ProductItemCreateView.as_view(), name='product-item-create'),
+
+    path('product-items/<int:pk>/adjust-stock/', ProductItemStockAdjustView.as_view(), name='product-item-stock-adjust'),
+
     # This NEW URL is for GET, PUT, PATCH, DELETE on a SINGLE item
     path('product-items/<int:pk>/', ProductItemDetailView.as_view(), name='product-item-detail'),
     
