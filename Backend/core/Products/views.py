@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 from .filters import ProductFilter
 
 
@@ -284,12 +284,11 @@ class ProductItemViewSet(viewsets.ModelViewSet):
         Overrides the default hard-delete to perform a soft-delete.
         This is now corrected to use Django's timezone utility.
         """
-        # This now works because 'timezone' is imported from django.utils
+        # This line will now work because of the import at the top of the file.
         instance.deleted_at = timezone.now()
         instance.status = 'INACTIVE'
         
-        # It's good practice to specify which fields are being updated
-        # for a minor performance improvement and clarity.
+        # Save the changes to the database
         instance.save(update_fields=['deleted_at', 'status', 'updated_at'])
 
         

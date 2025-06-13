@@ -508,7 +508,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 # In serializers.py
 from rest_framework import serializers
 from django.db import transaction
-from django.utils import timezone
 from .models import Product, ProductItem, ProductConfiguration, VariationOption
 
 
