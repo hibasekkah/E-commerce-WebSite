@@ -4,7 +4,7 @@ import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 const SideMenu = [
     { id: 1, icon: PlusCircle, name: 'Add Product', link:'/Product/Add'},
     { id: 2, icon: Pencil, name: 'Edit Product', link:'#'},
-    { id: 3, icon: Trash2, name: 'Delete Product', link:'#'},
+    { id: 3, icon: Trash2, name: 'Delete Product', link:'/Product/Delete'},
 ];
 
 export default function SidebarProduct({indexLink}) {

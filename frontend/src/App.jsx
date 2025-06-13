@@ -26,6 +26,7 @@ import PasswordPage from "./components/Account/PasswordPage";
 import SidebarProduct from "./components/Sidebar/SidebarProduct";
 import AddProdPage from "./components/Product/AddProdPage";
 import VariantProdPage from "./components/Product/VariantProdPage";
+import ProdDeletePage from "./components/Product/ProdDeletePage";
 
 
 const Products = [
@@ -125,6 +126,9 @@ function App() {
             } />
             <Route path='/Product/Add/Variants' element = {
               <VariantProdPage />
+            } />
+            <Route path='/Product/Delete' element = {
+              <ProdDeletePage />
             } />
           </Routes>
         <Footer />

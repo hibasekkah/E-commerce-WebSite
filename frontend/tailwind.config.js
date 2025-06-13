@@ -8,6 +8,7 @@ export default {
     extend: {
       fontFamily: {
         dancing : ["Dancing Script", "cursive"],
+        merienda : ['Merienda', 'sans-serif']
       },
       colors: {
         primary : '#da2828',

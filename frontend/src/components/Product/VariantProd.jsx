@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import Item from './Item';
 import InputDimension from './InputDimension';
 
 function isNumber(value) {
