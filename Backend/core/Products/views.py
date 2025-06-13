@@ -1,15 +1,14 @@
 from datetime import timezone
-from django.shortcuts import render
+from .filters import ProductFilter
+
 
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions,viewsets
-from .serializers import CategoryListSerializer, CategorySerializer, ProductItemSerializer, ProductItemUpdateSerializer,  VariationOptionSerializer, VariationSerializer
+from .serializers import CategoryListSerializer, CategorySerializer, ProductItemSerializer, ProductItemStockAdjustSerializer, ProductItemUpdateSerializer, ProductItemWriteSerializer,  VariationOptionSerializer, VariationSerializer
 
 from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
 from .models import Category, CategoryImage, Variation, VariationOption
@@ -93,11 +92,7 @@ class VariationOptionViewSet(viewsets.ModelViewSet):
 
 # Enhanced Product Views with Image Handling
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
 from .models import Product, ProductItem, ProductImage
 from .serializers import (
@@ -106,7 +101,6 @@ from .serializers import (
     ProductCreateSerializer,
     ProductUpdateSerializer,
     ProductDeleteSerializer,
-    ProductItemCreateSerializer,
     ProductBulkStatusUpdateSerializer,
     ProductImageBulkSerializer,
     ProductImageCreateUpdateSerializer
@@ -118,11 +112,22 @@ class ProductListView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        products = Product.objects.filter(deleted_at__isnull=True)
-        serializer = ProductListSerializer(products, many=True, context={'request': request})
+        # Start with the base queryset
+        queryset = Product.objects.filter(deleted_at__isnull=True).select_related('category')
+        
+        # Instantiate the filterset with the request's query parameters and the initial queryset
+        filterset = ProductFilter(request.query_params, queryset=queryset)
+        
+        # 'filterset.qs' is the final, filtered queryset
+        filtered_queryset = filterset.qs
+        
+        # You can add pagination here later if needed
+        
+        serializer = ProductListSerializer(filtered_queryset, many=True, context={'request': request})
+        
         return Response({
             'success': True,
-            'count': len(serializer.data),
+            'count': filtered_queryset.count(),
             'results': serializer.data
         })
 
@@ -237,44 +242,56 @@ class ProductItemDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ProductItemCreateView(APIView):
+class ProductItemViewSet(viewsets.ModelViewSet):
     """
-    API endpoint dedicated to creating a new ProductItem.
-    Listens for POST requests at its configured URL.
+    A complete ViewSet for listing, retrieving, creating, updating,
+    and deleting ProductItems. Handles both JSON and multipart/form-data.
     """
-    # These parsers are required to handle `multipart/form-data` from Postman.
-    parser_classes = [MultiPartParser, FormParser]
-    
-    def post(self, request, *args, **kwargs):
-        """
-        Handles the POST request to create a ProductItem.
-        """
-        # This is the CRITICAL step that fixes previous issues.
-        # We build a clean Python dictionary, making sure to use .getlist()
-        # for fields that can have multiple values.
-        data_for_serializer = {
-            'product': request.data.get('product'),
-            'price': request.data.get('price'),
-            'stock_quantity': request.data.get('stock_quantity'),
-            'sku': request.data.get('sku'),
-            'display_order': request.data.get('display_order'),
-            'status': request.data.get('status', 'ACTIVE'), # Default to ACTIVE
-            'configurations': request.POST.getlist('configurations'),
-            'images': request.FILES.getlist('images')
-        }
+    queryset = ProductItem.objects.filter(deleted_at__isnull=True).prefetch_related(
+        'images', 'productconfiguration_set__variation_option__variation'
+    )
+    # Add parsers to handle form data for file uploads
+    parser_classes = [MultiPartParser, FormParser] 
 
-        # 1. Use the "write" serializer to process the incoming data.
-        serializer = ProductItemCreateSerializer(data=data_for_serializer)
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProductItemWriteSerializer
+        return ProductItemSerializer
+
+    def perform_create(self, serializer):
+        """
+        Overrides the default create method to handle multipart data correctly.
+        """
+        # We manually build the data dictionary to pass to the serializer.
+        # This ensures getlist() is used for images.
+        data_for_serializer = {
+            'product': self.request.data.get('product'),
+            'price': self.request.data.get('price'),
+            'stock_quantity': self.request.data.get('stock_quantity'),
+            'sku': self.request.data.get('sku'),
+            'display_order': self.request.data.get('display_order', 0),
+            'status': self.request.data.get('status', 'ACTIVE'),
+            'configurations': self.request.data.get('configurations', '[]'), # Send as string
+            'images': self.request.FILES.getlist('images')
+        }
+        # Re-initialize the serializer with the structured data
+        serializer = self.get_serializer(data=data_for_serializer)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """
+        Overrides the default hard-delete to perform a soft-delete.
+        This is now corrected to use Django's timezone utility.
+        """
+        # This now works because 'timezone' is imported from django.utils
+        instance.deleted_at = timezone.now()
+        instance.status = 'INACTIVE'
         
-        # 2. If the data is invalid, this will automatically return a 400 error.
-        if serializer.is_valid(raise_exception=True):
-            # 3. If valid, .save() calls our custom .create() method in the serializer.
-            product_item = serializer.save()
-            
-            # 4. On success, use the "read" serializer to format a detailed JSON response.
-            # (ProductItemSerializer should be your serializer for GET requests)
-            response_serializer = ProductItemSerializer(product_item)
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        # It's good practice to specify which fields are being updated
+        # for a minor performance improvement and clarity.
+        instance.save(update_fields=['deleted_at', 'status', 'updated_at'])
+
         
 class ProductImageView(APIView):
     """Handle product item images"""
@@ -411,8 +428,7 @@ class ProductBulkStatusView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-from rest_framework import generics, status
-from rest_framework.response import Response
+from rest_framework import generics
 from .models import Promotion
 from .serializers import PromotionSerializer, PromotionCreateUpdateSerializer
 
@@ -451,3 +467,33 @@ class PromotionRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVie
         if self.request.method in ['PUT', 'PATCH']:
             return PromotionCreateUpdateSerializer
         return PromotionSerializer
+    
+
+class ProductItemStockAdjustView(APIView):
+    """
+    A dedicated endpoint to ADJUST the stock quantity for a single ProductItem.
+    Accepts POST requests at /api/items/{pk}/adjust-stock/
+    """
+    # permission_classes = [IsAdminUser] # Recommended for security
+
+    def post(self, request, pk):
+        """
+        Handles adjusting the stock quantity.
+        """
+        try:
+            # We use select_for_update() to lock the row during the transaction,
+            # preventing race conditions if two adjustments happen at the same time.
+            item = ProductItem.objects.select_for_update().get(pk=pk, deleted_at__isnull=True)
+        except ProductItem.DoesNotExist:
+            return Response({"error": "Product Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Use our specialized serializer. Note that we still pass the `instance`.
+        serializer = ProductItemStockAdjustSerializer(instance=item, data=request.data)
+        
+        if serializer.is_valid():
+            # The serializer's .update() method contains all our logic.
+            updated_item = serializer.save()
+            # Return the full item data using the read-only serializer for confirmation.
+            return Response(ProductItemSerializer(updated_item).data)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -4,6 +4,7 @@ from Users.serializers import UserSerializer
 from django.utils import timezone
 from django.db import transaction
 
+#############category
 
 class CategoryImageSerializer(serializers.ModelSerializer):
     """Serializer for CategoryImage model"""
@@ -167,14 +168,6 @@ class VariationSerializer(serializers.ModelSerializer):
             instance.variationoption_set.all(), many=True).data
         return representation
 #####------------------products
-################### configuration
-# class ProductConfigurationSerializer(serializers.ModelSerializer):
-#     """Serializer for product configurations"""
-#     variation_option_detail = VariationOptionSerializer(source='variation_option', read_only=True)
-    
-#     class Meta:
-#         model = ProductConfiguration
-#         fields = ['id', 'variation_option', 'variation_option_detail']
 
 ################## image product
 class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
@@ -190,29 +183,6 @@ class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
         return obj.image_url()
 
 
-from rest_framework import serializers
-from django.db import transaction
-from .models import (
-    Product, ProductItem, ProductImage, 
-    ProductConfiguration, VariationOption
-)
-
-# ==============================================================================
-#  1. READ-ONLY SERIALIZERS (For displaying data in responses)
-# ==============================================================================
-
-# class ProductImageSerializer(serializers.ModelSerializer):
-#     """READ-ONLY serializer for displaying ProductImage details."""
-#     image_url = serializers.CharField(source='image.url', read_only=True)
-
-#     class Meta:
-#         model = ProductImage
-#         fields = [
-#             'id', 'image_url', 'alt_text', 
-#             'is_primary', 'display_order'
-#         ]
-
-# In your serializers.py
 
 from rest_framework import serializers
 from django.db import transaction
@@ -250,38 +220,47 @@ class ProductItemSerializer(serializers.ModelSerializer):
     or after a successful creation/update.
     """
     images = ProductImageSerializer(many=True, read_only=True)
-    configurations = ProductConfigurationSerializer(
-        source='productconfiguration_set', 
-        many=True, 
-        read_only=True
-    )
+    variations = serializers.SerializerMethodField()
     
     class Meta:
         model = ProductItem
         fields = [
-            'id', 'sku', 'price', 'stock_quantity', 
-            'display_order', 'status', 'images', 'configurations',
-            'created_at', 'updated_at'
+            'id', 'price', 'stock_quantity', 
+            'display_order', 'status', 'images', 'variations'
         ]
-
-
-# ==============================================================================
-#  B. WRITE-ONLY SERIALIZER (For processing the POST request)
-# ==============================================================================
-
-class ProductItemCreateSerializer(serializers.ModelSerializer):
-    """
-    The main WRITE-ONLY serializer for CREATING a new ProductItem.
-    It takes the raw data from your Postman request and turns it into database objects.
-    """
-    # This field expects a list of integers for the 'configurations' key.
-    configurations = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False,
-        write_only=True
-    )
     
-    # This field expects a list of files for the 'images' key.
+    def get_variations(self, obj):
+        """
+        This method builds the clean {"Size": "M", "Color": "Red"} object.
+        It iterates through the configurations of a single ProductItem instance ('obj').
+        """
+        return {
+            config.variation_option.variation.name: config.variation_option.value
+            for config in obj.productconfiguration_set.all()
+        }
+
+
+# ==============================================================================
+class ProductConfigurationWriteSerializer(serializers.Serializer):
+    """
+    This is a helper for validating the user-friendly format:
+    {"variation_name": "Color", "value": "Blue"}
+    It does not map directly to a model.
+    """
+    variation_name = serializers.CharField(max_length=100)
+    value = serializers.CharField(max_length=100)
+# ==============================================================================
+import json
+
+class ProductItemWriteSerializer(serializers.ModelSerializer):
+    """
+    A single, powerful serializer for CREATING and UPDATING ProductItems
+    with their configurations and images in a single multipart/form-data request.
+    """
+    # We expect 'configurations' to be a JSON string from the form data.
+    configurations = serializers.CharField(required=False, write_only=True)
+    
+    # We expect 'images' to be a list of files from the form data.
     images = serializers.ListField(
         child=serializers.ImageField(allow_empty_file=False, use_url=False),
         required=False,
@@ -295,59 +274,82 @@ class ProductItemCreateSerializer(serializers.ModelSerializer):
             'display_order', 'status', 'configurations', 'images'
         ]
         extra_kwargs = {
-            'product': {'required': True},
-            'price': {'required': True},
-            'sku': {'required': False, 'allow_blank': True},
+            'product': {'required': False}, # Not required on update
         }
 
     def validate_configurations(self, value):
-        """Checks if all provided VariationOption IDs are valid."""
-        if not value:
-            return []
+        """
+        Validates the incoming JSON string for configurations.
+        """
+        try:
+            # Parse the string back into a Python list of dictionaries.
+            configurations_data = json.loads(value)
+            if not isinstance(configurations_data, list):
+                raise serializers.ValidationError("Configurations must be a JSON-encoded list.")
+            # You can add more validation for the inner objects if needed.
+            return configurations_data
+        except json.JSONDecodeError:
+            raise serializers.ValidationError("Invalid JSON format for configurations.")
+
+    def _get_or_create_variation_option(self, product, config_data):
+        """
+        The core logic. Finds or creates the necessary Variation and VariationOption.
+        (This helper method remains the same)
+        """
+        variation_name = config_data.get('variation_name', '').strip()
+        value = config_data.get('value', '').strip()
         
-        existing_ids = VariationOption.objects.filter(id__in=value).values_list('id', flat=True)
-        if len(existing_ids) != len(set(value)):
-            missing = list(set(value) - set(existing_ids))
-            raise serializers.ValidationError(f"Invalid VariationOption IDs: {missing}")
-        return list(set(value))
+        if not variation_name or not value:
+            raise serializers.ValidationError("Variation name and value cannot be empty.")
+
+        variation, _ = Variation.objects.get_or_create(
+            category=product.category, name__iexact=variation_name,
+            defaults={'name': variation_name}
+        )
+        variation_option, _ = VariationOption.objects.get_or_create(
+            variation=variation, value__iexact=value,
+            defaults={'value': value}
+        )
+        return variation_option
 
     @transaction.atomic
     def create(self, validated_data):
         """
-        Orchestrates the creation of the ProductItem and its related objects.
-        This method is called by serializer.save() when creating a new instance.
+        Handles creating the ProductItem and all its related data.
         """
-        # Separate the related data from the main ProductItem data.
-        config_ids = validated_data.pop('configurations', [])
+        if 'product' not in validated_data:
+            raise serializers.ValidationError({"product": "This field is required for creation."})
+            
+        product = validated_data['product']
+        configurations_data = validated_data.pop('configurations', [])
         image_files = validated_data.pop('images', [])
         
-        # Create the main ProductItem object.
+        # Create the main ProductItem
         product_item = ProductItem.objects.create(**validated_data)
 
-        # Create the configuration links.
-        if config_ids:
-            new_configs = [
+        # Create the configurations
+        if configurations_data:
+            configs_to_create = [
                 ProductConfiguration(
-                    product_item=product_item, 
-                    variation_option_id=cid,
-                    display_order=i
-                )
-                for i, cid in enumerate(config_ids)
+                    product_item=product_item,
+                    variation_option=self._get_or_create_variation_option(product, config_data)
+                ) for config_data in configurations_data
             ]
-            ProductConfiguration.objects.bulk_create(new_configs)
-            
-        # Create the image objects.
+            ProductConfiguration.objects.bulk_create(configs_to_create)
+
+        # Create the images
         if image_files:
             for i, image_file in enumerate(image_files):
                 ProductImage.objects.create(
                     product=product_item,
                     image=image_file,
-                    alt_text=f"Image for {product_item.product.name}",
                     is_primary=(i == 0),
                     display_order=i
                 )
             
         return product_item
+
+
 
 class ProductItemUpdateSerializer(serializers.ModelSerializer):
     """Enhanced serializer for updating product items with image support"""
@@ -444,13 +446,12 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for product retrieval with full image support"""
-    category_detail = CategorySerializer(source='category', read_only=True)
     items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'category', 'category_detail',
+            'id', 'name', 'description', 'category',
             'status', 'display_order',
             'items', 'created_at', 'updated_at'
         ]
@@ -459,7 +460,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateSerializer(serializers.ModelSerializer):
     """Enhanced serializer for creating new products with items and images"""
-    items = ProductItemCreateSerializer(many=True, required=False)
+    items = ProductItemSerializer(many=True, required=False)
     
     class Meta:
         model = Product
@@ -509,118 +510,6 @@ from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 from .models import Product, ProductItem, ProductConfiguration, VariationOption
-
-# ==============================================================================
-#  A. The "Write" Serializer for a Single ProductItem
-# ==============================================================================
-# This is our robust, reusable serializer for creating/updating an item.
-# It accepts a simple list of IDs for configurations.
-
-class ProductItemWriteSerializer(serializers.ModelSerializer):
-    """
-    Handles creating and updating a single ProductItem.
-    Accepts 'configurations' as a simple list of VariationOption IDs.
-    """
-    # 'id' is made writable but not required. Its presence signals an update.
-    id = serializers.IntegerField(required=False)
-    
-    configurations = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False,
-        write_only=True
-    )
-
-    class Meta:
-        model = ProductItem
-        fields = [
-            'id', 'product', 'price', 'stock_quantity', 'sku',
-            'display_order', 'status', 'configurations'
-        ]
-        extra_kwargs = {
-            # 'product' is only needed when creating an item from scratch.
-            'product': {'required': False},
-        }
-
-    # Include the create and update methods from our previous final version.
-    # This is where all the logic for a single item lives.
-    # (The full code for this class was provided in previous answers)
-    def create(self, validated_data):
-        # ... logic to create an item and its configurations ...
-        config_ids = validated_data.pop('configurations', [])
-        product_item = ProductItem.objects.create(**validated_data)
-        if config_ids:
-            ProductConfiguration.objects.bulk_create([
-                ProductConfiguration(product_item=product_item, variation_option_id=cid)
-                for cid in config_ids
-            ])
-        return product_item
-
-    def update(self, instance, validated_data):
-        # ... logic to update an item and replace its configurations ...
-        config_ids = validated_data.pop('configurations', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if config_ids is not None:
-            instance.productconfiguration_set.all().delete()
-            if config_ids:
-                ProductConfiguration.objects.bulk_create([
-                    ProductConfiguration(product_item=instance, variation_option_id=cid)
-                    for cid in config_ids
-                ])
-        return instance
-
-
-# ==============================================================================
-#  B. The Top-Level "Write" Serializer for the Product
-# ==============================================================================
-# This is the main serializer for your update view.
-
-class ProductItemUpdateSerializer(serializers.ModelSerializer):
-    """WRITE-ONLY serializer for UPDATING an existing ProductItem."""
-    # This field definition is correct.
-    configurations = serializers.ListField(
-        child=serializers.IntegerField(), 
-        required=False, 
-        write_only=True
-    )
-    
-    class Meta:
-        model = ProductItem
-        fields = ['price', 'stock_quantity', 'sku', 'display_order', 'status', 'configurations']
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        # Pop the configurations list before calling the parent update method.
-        config_ids = validated_data.pop('configurations', None)
-        
-        # Update the simple fields on the ProductItem instance.
-        instance = super().update(instance, validated_data)
-
-        # If a list of configurations was provided, update the relationship.
-        if config_ids is not None:
-            # More efficient update: only add/remove what's necessary.
-            current_config_ids = set(instance.productconfiguration_set.values_list('variation_option_id', flat=True))
-            new_config_ids = set(config_ids)
-
-            # 1. Delete configurations that are no longer in the list.
-            ids_to_delete = current_config_ids - new_config_ids
-            if ids_to_delete:
-                instance.productconfiguration_set.filter(variation_option_id__in=ids_to_delete).delete()
-
-            # 2. Create new configurations that were added to the list.
-            ids_to_create = new_config_ids - current_config_ids
-            if ids_to_create:
-                # Optional but recommended: Check if all provided IDs are valid VariationOption objects.
-                if VariationOption.objects.filter(id__in=ids_to_create).count() != len(ids_to_create):
-                    raise serializers.ValidationError({"configurations": "One or more invalid VariationOption IDs provided."})
-
-                ProductConfiguration.objects.bulk_create([
-                    ProductConfiguration(product_item=instance, variation_option_id=cid)
-                    for cid in ids_to_create
-                ])
-                
-        return instance
 
 
 # --- For Product ---
@@ -971,3 +860,46 @@ class ProductItemReadOnlySerializer(serializers.ModelSerializer):
         fields = ['id', 'sku', 'product'] # Add name from product if needed
         # Example to get product name:
         # name = serializers.CharField(source='product.name', read_only=True)
+
+
+class ProductItemStockAdjustSerializer(serializers.Serializer):
+    """
+    A specialized serializer for ADJUSTING stock quantity.
+    It does not map to a model field directly.
+    """
+    # We accept an integer, which can be positive (to add) or negative (to remove).
+    adjustment = serializers.IntegerField()
+
+    def validate_adjustment(self, value):
+        """
+        An adjustment of 0 does nothing, so we can disallow it.
+        """
+        if value == 0:
+            raise serializers.ValidationError("Adjustment value cannot be zero.")
+        return value
+
+    def update(self, instance, validated_data):
+        """
+        Custom update logic to perform the incremental update.
+        """
+        adjustment = validated_data['adjustment']
+        
+        # Calculate the new stock level
+        new_stock = instance.stock_quantity + adjustment
+
+        # Business Logic: Prevent stock from going below zero
+        if new_stock < 0:
+            raise serializers.ValidationError({
+                'adjustment': f"Adjustment of {adjustment} is invalid. Current stock is {instance.stock_quantity}, which would result in a negative quantity."
+            })
+            
+        instance.stock_quantity = new_stock
+        
+        # Automatically update the status based on the new stock level
+        if instance.stock_quantity > 0:
+            instance.status = 'ACTIVE'
+        else:
+            instance.status = 'OUT_OF_STOCK'
+            
+        instance.save(update_fields=['stock_quantity', 'status', 'updated_at'])
+        return instance
