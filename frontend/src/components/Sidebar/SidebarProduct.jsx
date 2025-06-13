@@ -1,9 +1,9 @@
 import React from 'react'
-import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, PackagePlus } from 'lucide-react';
 
 const SideMenu = [
     { id: 1, icon: PlusCircle, name: 'Add Product', link:'/Product/Add'},
-    { id: 2, icon: Pencil, name: 'Edit Product', link:'#'},
+    { id: 2, icon: PackagePlus, name: 'Manage Product Stock', link:'#'},
     { id: 3, icon: Trash2, name: 'Delete Product', link:'/Product/Delete'},
 ];
 
