@@ -27,6 +27,7 @@ import SidebarProduct from "./components/Sidebar/SidebarProduct";
 import AddProdPage from "./components/Product/AddProdPage";
 import VariantProdPage from "./components/Product/VariantProdPage";
 import ProdDeletePage from "./components/Product/ProdDeletePage";
+import AddQuantityProdPage from "./components/Product/AddQuantityProdPage";
 
 
 const Products = [
@@ -129,6 +130,9 @@ function App() {
             } />
             <Route path='/Product/Delete' element = {
               <ProdDeletePage />
+            } />
+            <Route path='/Product/Add/Quantity' element = {
+              <AddQuantityProdPage />
             } />
           </Routes>
         <Footer />

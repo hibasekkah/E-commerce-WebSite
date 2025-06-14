@@ -3,7 +3,7 @@ import { PlusCircle, Trash2, PackagePlus } from 'lucide-react';
 
 const SideMenu = [
     { id: 1, icon: PlusCircle, name: 'Add Product', link:'/Product/Add'},
-    { id: 2, icon: PackagePlus, name: 'Manage Product Stock', link:'#'},
+    { id: 2, icon: PackagePlus, name: 'Manage Product Stock', link:'/Product/Add/Quantity'},
     { id: 3, icon: Trash2, name: 'Delete Product', link:'/Product/Delete'},
 ];
 
