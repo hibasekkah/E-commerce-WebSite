@@ -81,6 +81,11 @@ class CategoryImage(models.Model):
 class Variation(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, db_index=True)
     name = models.CharField(max_length=100, db_index=True)
+    display_order = models.PositiveIntegerField(
+        default=0, 
+        db_index=True,
+        help_text="Controls the order of variations (e.g., 0 for Size, 1 for Color)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 
@@ -89,6 +94,7 @@ class Variation(models.Model):
         indexes = [
             models.Index(fields=['category', 'name']),
         ]
+        ordering = ['display_order', 'name']
 
     def __str__(self):
         return f"{self.name} ({self.category.name})"
@@ -128,7 +134,7 @@ class Product(models.Model):
         blank=True, null=True,
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True) # FIX
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     status = models.CharField(
@@ -170,7 +176,7 @@ class ProductItem(models.Model):
         help_text="Ordre d'affichage des déclinaisons de produit"
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     status = models.CharField(
         max_length=20,
