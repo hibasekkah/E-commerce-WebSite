@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import InputDimension from './InputDimension';
+import Item from './Item'
 
 function isNumber(value) {
   return typeof value === 'number' && !isNaN(value);
@@ -231,7 +232,12 @@ export default function VariantProd() {
           />
 
           
-          {productDetails.category !== 'Food & Spices' ? 
+          {!(
+                (productDetails.category === 'Natural Cosmetics' &&
+                (productDetails.subCategory === 'Creams and Gels' || productDetails.subCategory === 'Liquids')) ||
+                productDetails.category === 'Food & Spices'
+            )
+            ? 
             <div className='mb-4'>
               <input
                   type="text"
@@ -280,13 +286,15 @@ export default function VariantProd() {
         <>
           <h2 className="text-2xl font-medium mb-8 mt-5 text-center text-primary border-primary border-t-4 pt-3">Product Items</h2>
           <div className='mx-10 mb-10 grid grid-cols-1 sm:grid-cols-2 gap-10'>
-            {variants.map((element, index) => (
-                <Item 
-                  key={index} 
-                  element={element} index={index}
-                  removeItem={removeItem}
-                />
-            ))}
+            {variants.map((element, index) => {
+                return (
+                    <Item 
+                      key={index} 
+                      element={element} index={index}
+                      removeItem={removeItem}
+                    />
+                )
+            })}
             
           </div> 
         </>

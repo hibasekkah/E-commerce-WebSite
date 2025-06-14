@@ -15,8 +15,7 @@ export default function AddProd() {
     const [category, setCategory] = useState('');
     const [subCategories, setSubCategories] = useState([]);
     const [subCategory, setSubCategory] = useState('');
-    const [displayOrder, setDisplayOrder] = useState();
-    const [brand, setBrand] = useState('');
+    
 
     const [eName, setEName] = useState('');
     const [eDescription, setEDescription] = useState('');
@@ -68,8 +67,6 @@ export default function AddProd() {
                 description,
                 category,
                 ...(subCategory && { subCategory }),
-                ...(displayOrder && {displayOrder}),
-                ...(brand && {brand})
             };
 
             localStorage.setItem('productDetails', JSON.stringify(productDetails));
