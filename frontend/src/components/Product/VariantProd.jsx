@@ -204,7 +204,6 @@ export default function VariantProd() {
 
     setCurrentVariant(newVariant);
     setECurrentVariant(errors);
-    console.log(newVariant);
 
     if (isValid) {
       setVariants((c) => [...c, newVariant]);
@@ -225,7 +224,7 @@ export default function VariantProd() {
       formData.append("product", productId);
       formData.append("price", element.price);
       formData.append("stock_quantity", element.quantity);
-      formData.append("image", element.image); // fichier image
+      formData.append("images", element.image); // fichier image
 
       const configurations = Object.entries(element.variantDimensions).map(
         ([key, value]) => ({
@@ -252,6 +251,7 @@ export default function VariantProd() {
     };
 
     if(valide) {
+      setVariants([]);
       setMessage("Items added successfully.");
       setMessageStatus(false);
     }else {
