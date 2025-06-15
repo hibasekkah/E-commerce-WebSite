@@ -1,5 +1,22 @@
 import React, { useState } from 'react'
 import CatProdDelete from './CatProdDelete';
+import axios from 'axios';
+
+const loadProdsFromDB = async () => {
+  try{
+    const res = await axios.get('http://localhost:8000/api/products/');
+    
+    if(res.status === 200) {
+      console.log(res.data);
+    } else {
+      console.log('error');
+    }
+  } catch (error) {
+    console.log('catch');
+  }
+}
+
+loadProdsFromDB();
 
 const prods = [
   {
