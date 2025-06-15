@@ -3,12 +3,16 @@ import React, { useState } from 'react'
 const renderDimensions = (element) => {
   if (!element.variantDimensions || typeof element.variantDimensions !== 'object') return null;
 
-  return Object.entries(element.variantDimensions).map(([key, value]) => (
-    <div className="mb-4" key={key}>
-        <label className="block font-semibold mb-3 capitalize">{key}:</label>
-        <p>{value}</p>
-    </div>
-  ));
+  return Object.entries(element.variantDimensions).map(([key, value]) => {
+    const valideKey = (key === 'FabricLength' ? 'Length' : key);
+    const valideValue = (value ? value : 'Not set');
+    return (
+        <div className="mb-4" key={key}>
+            <label className="block font-semibold mb-3 capitalize">{valideKey}:</label>
+            <p className={`${value ? '': 'text-yellow-600'}`}>{valideValue}</p>
+        </div>
+    )
+  });
 };
 
 

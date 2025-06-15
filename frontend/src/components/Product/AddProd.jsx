@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import axios from "axios";
 
 const categories = [
     {id: 1, name: 'Home Decor', subCategories: ["Home Furniture", "Accessories"]},
@@ -15,6 +16,8 @@ export default function AddProd() {
     const [category, setCategory] = useState('');
     const [subCategories, setSubCategories] = useState([]);
     const [subCategory, setSubCategory] = useState('');
+    const [message, setMessage] = useState("");
+    const [messageStatus, setMessageStatus] = useState(false);
     
 
     const [eName, setEName] = useState('');
@@ -34,7 +37,7 @@ export default function AddProd() {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         let isValid = true;
 
         if (!name.trim()) {
@@ -62,16 +65,85 @@ export default function AddProd() {
             SetESubCategory('');
         }
         if (isValid) {
+            let idCat = null;
+            if(category === 'Accessories & Jewelry' ) idCat = 12;
+            else if(subCategory === 'Liquids') {
+                if(category === 'Natural Cosmetics'){
+                    idCat = 10;
+                } else if(category === 'Food & Spices'){
+                    idCat = 14;
+                }
+            }
+            else {
+                switch(subCategory){
+                    case 'Home Furniture' : 
+                        idCat = 2;
+                        break;
+                    case 'Accessories' : 
+                        idCat = 3;
+                        break;
+                    case 'Clothes' : 
+                        idCat = 5;
+                        break;
+                    case 'Textiles' : 
+                        idCat = 6;
+                        break;
+                    case 'Shoes' : 
+                        idCat = 7;
+                        break;
+                    case 'Creams and Gels' : 
+                        idCat = 9;
+                        break;
+                    case 'Others' : 
+                        idCat = 11;
+                        break;
+                    case 'Solids': 
+                        idCat = 15;
+                        break;
+                    default: 
+                        idCat = null;
+                }
+            }
             const productDetails = {
                 name,
                 description,
                 category,
+                idCat,
                 ...(subCategory && { subCategory }),
             };
 
             localStorage.setItem('productDetails', JSON.stringify(productDetails));
 
-            window.location.href = '/Product/Add/Variants';
+            const payload = {
+                name,
+                description,
+                category: idCat
+            }
+            try {
+                // Register the user
+                const res = await axios.post("http://localhost:8000/api/products/", payload);
+
+                if (res.status === 201 || res.status === 200) { //200 OK, 201 created
+                    localStorage.setItem('productId', JSON.stringify(res.data.id));
+                    setMessage("Product added successfully! Redirecting to variant setup...");
+                    setTimeout(()=> {
+                        window.location.href = '/Product/Add/Variants';
+                    }, 2000);
+                    setMessageStatus(false);
+                } else {
+                    setMessage("Failed to add product. Please try again.");
+                    setMessageStatus(true);
+                }
+                } catch (error) {
+                const messageError =
+                    error.response?.data?.detail ||
+                    Object.values(error.response?.data || {}).flat().join("\n") ||
+                    "Something went wrong.";
+                setMessage(messageError);
+                setMessageStatus(true);
+            }
+
+            
         }
         
     }
@@ -145,8 +217,10 @@ export default function AddProd() {
                         </div>
                     )
                 }
+
                
                 <div className="mb-4 flex flex-col gap-3">
+                    <p className={messageStatus ? 'text-primary' : 'text-blue-600'}>{message}</p>
                     <button
                     onClick={handleSave}
                     className="px-4 py-2 w-full rounded bg-gradient-to-tr from-red-500 to-red-800 text-white hover:from-red-700 hover:to-red-700"

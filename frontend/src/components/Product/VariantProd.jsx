@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import InputDimension from './InputDimension';
 import Item from './Item'
+import axios from 'axios';
 
 function isNumber(value) {
   return typeof value === 'number' && !isNaN(value);
@@ -15,6 +16,10 @@ export default function VariantProd() {
   const [eCurrentVariant, setECurrentVariant] = useState({units: ['', '']});
   let variantDimensions = {};
   const [inputKey, setInputKey] = useState(0);
+  const productId = JSON.parse(localStorage.getItem('productId'));
+  const [message, setMessage] = useState("");
+  const [messageStatus, setMessageStatus] = useState(false);
+  
 
   const removeItem = (index) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
@@ -46,16 +51,16 @@ export default function VariantProd() {
 
     if (productDetails.category === 'Home Decor' && productDetails.subCategory === 'Home Furniture') {
       variantDimensions = {};
-      if (!dimensions.height || dimensions.height <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+      if (!dimensions.length || dimensions.length <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        if(!dimensions.height || dimensions.height <= 0) {
-          errors.height = "Please enter a valid height.";
+        if(!dimensions.length || dimensions.length <= 0) {
+          errors.length = "Please enter a valid length.";
         } 
         if(!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
           errors.units[0] = "Please select a unit."
         }
       } else {
-        variantDimensions = {...variantDimensions, Height: `${dimensions.height} ${dimensions.selectedUnits[0]}`};
+        variantDimensions = {...variantDimensions, Length: `${dimensions.length} ${dimensions.selectedUnits[0]}`};
       }
       if (!dimensions.width || dimensions.width <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[1]) {
         isValid = false;
@@ -68,6 +73,26 @@ export default function VariantProd() {
       } else {
         variantDimensions = {... variantDimensions, Width: `${dimensions.width} ${dimensions.selectedUnits[1]}`};
       }
+      let height = null;
+      if (dimensions.height !== undefined && dimensions.height !== null && dimensions.height !== "") {
+        if (dimensions.height <= 0) {
+          isValid = false;
+          errors.height = "Please enter a valid height.";
+        }
+        if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[2]) {
+          isValid = false;
+          errors.units[2] = "Please select a unit.";
+        } else if (dimensions.height > 0) {
+          // Ajout seulement si tout est bon
+          height = `${dimensions.height} ${dimensions.selectedUnits[2]}`;
+        }
+      }
+
+      variantDimensions = {
+        ...variantDimensions,
+        Height: height,
+      };
+
 
     }
 
@@ -76,7 +101,7 @@ export default function VariantProd() {
         isValid = false;
         errors.dimAccessorie = "Please enter a valid dimension for accessorie."
       } else {
-        variantDimensions = {Dimension:dimensions.dimAccessorie};
+        variantDimensions = {Size:dimensions.dimAccessorie};
       }      
     } 
 
@@ -85,22 +110,22 @@ export default function VariantProd() {
         isValid = false;
         errors.clothingSize = "Please select a clothing size."
       } else {
-        variantDimensions = {Size: dimensions.clothingSize};
+        variantDimensions = {ClotheSize: dimensions.clothingSize};
       }
     } 
 
     if(productDetails.category === 'Clothing & Textiles' && productDetails.subCategory === 'Textiles') {
-      if(!dimensions.length || dimensions.length <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
+      if(!dimensions.fabricLength || dimensions.fabricLength <= 0 || !dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
         isValid = false;
-        if (!dimensions.length || dimensions.length <= 0) {
-          errors.length = "Please enter a valid length.";
+        if (!dimensions.fabricLength || dimensions.fabricLength <= 0) {
+          errors.fabricLength = "Please enter a valid length.";
         } 
         if (!dimensions?.selectedUnits?.length || !dimensions.selectedUnits[0]) {
           errors.units[0] = "Please select a unit."
         } 
       }
       else {
-        variantDimensions = {Length: `${dimensions.length} ${dimensions.selectedUnits[0]}`};
+        variantDimensions = {FabricLength: `${dimensions.fabricLength} ${dimensions.selectedUnits[0]}`};
       }
     } 
 
@@ -109,7 +134,7 @@ export default function VariantProd() {
         isValid = false;
         errors.shoesSize = "Please enter a valid shoe size.";
       } else {
-        variantDimensions = {Size: dimensions.shoesSize};
+        variantDimensions = {ShoeSize: dimensions.shoesSize};
       }
     }
 
@@ -124,7 +149,7 @@ export default function VariantProd() {
         } 
       }
       else {
-        variantDimensions = {Length: `${dimensions.creamWeight} ${dimensions.selectedUnits[0]}`};
+        variantDimensions = {Weight: `${dimensions.creamWeight} ${dimensions.selectedUnits[0]}`};
       }
     }
 
@@ -179,16 +204,61 @@ export default function VariantProd() {
 
     setCurrentVariant(newVariant);
     setECurrentVariant(errors);
+    console.log(newVariant);
 
     if (isValid) {
       setVariants((c) => [...c, newVariant]);
       // Réinitialiser currentVariant et erreurs
+      
       setCurrentVariant({});
       setECurrentVariant({});
       setDimensions({});
       setInputKey(prev => prev + 1);
     }
   };
+
+  const save = async () => {
+    let valide = true;
+    for (const element of variants){
+
+      const formData = new FormData();
+      formData.append("product", productId);
+      formData.append("price", element.price);
+      formData.append("stock_quantity", element.quantity);
+      formData.append("image", element.image); // fichier image
+
+      const configurations = Object.entries(element.variantDimensions).map(
+        ([key, value]) => ({
+          variation_name: key,
+          value: value,
+        })
+      );
+      configurations.push({variation_name:'Color', value: element.color});
+      // Pour les configurations : JSON.stringify + append
+      formData.append("configurations", JSON.stringify(configurations));
+      try {
+        // Register the user
+        const res = await axios.post("http://localhost:8000/api/items/", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }});
+
+        if (res.status !== 201 && res.status !== 200) { //200 OK, 201 created
+            valide = false;
+        } 
+        } catch (error) {
+        valide = false;
+      }
+    };
+
+    if(valide) {
+      setMessage("Items added successfully.");
+      setMessageStatus(false);
+    }else {
+      setMessage("Failed to add items. Please try again.");
+      setMessageStatus(true);
+    }
+  }
 
 
 
@@ -266,7 +336,9 @@ export default function VariantProd() {
                 {eCurrentVariant.image}
             </div>
           </div>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+          <div className="mb-4 flex flex-col gap-3">
+            <p className={messageStatus ? 'text-primary' : 'text-blue-600'}>{message}</p>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
             <button
               onClick={handleAddItem}
               className="px-4 py-2 rounded bg-gradient-to-tr from-red-500 to-red-700 text-white hover:from-red-700 hover:to-red-700"
@@ -275,10 +347,13 @@ export default function VariantProd() {
             </button>
             <button
               className="px-4 py-2 rounded bg-gradient-to-tr from-red-500 to-red-700 text-white hover:from-red-700 hover:to-red-700"
+              onClick={save}
             >
               Save Items
             </button>
           </div>
+          </div>
+          
           
         </div>
       </div>

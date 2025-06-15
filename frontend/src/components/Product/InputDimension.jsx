@@ -5,6 +5,8 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
     const {category, subCategory} = productDetails;
     const [height, setHeight] = useState();
     const [width, setWidth] = useState();
+    const [length, setLength] = useState();
+    
     const dimensionOptions = [
         "small",
         "medium",
@@ -13,7 +15,7 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
     ];
     const [dimAccessorie, setDimAccessorie] = useState('');
     const [clothingSize, setClothingSize] = useState('');
-    const [length, setLength] = useState();
+    const [fabricLength, setFabricLength] = useState();
     const [shoesSize, setShoesSize] = useState();
     const [creamWeight, setCreamWeight] = useState();
     const [cosmeticsVolume, setCosmeticsVolume] = useState();
@@ -30,7 +32,7 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
         newSelectedUnits[index] = e.target.value;
         setSelectedUnits(newSelectedUnits);
         onChangeDimensions({
-            height, width, dimAccessorie, clothingSize, length,
+            height, width, length, dimAccessorie, clothingSize, fabricLength,
             shoesSize, creamWeight, cosmeticsVolume, foodVolume, foodWeight,
             selectedUnits: newSelectedUnits
         });
@@ -42,12 +44,14 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
             setHeight(value);
         else if (inputType === 'width')
             setWidth(value);
+        else if (inputType === 'length')
+            setLength(value);
         else if (inputType === 'dimAccessorie')
             setDimAccessorie(value);
         else if (inputType ==='clothingSize')
             setClothingSize(value);
-        else if (inputType === 'length') 
-            setLength(value);
+        else if (inputType === 'fabricLength') 
+            setFabricLength(value);
         else if (inputType === 'shoesSize')
             setShoesSize(value);
         else if (inputType === 'creamWeight')
@@ -61,7 +65,7 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
 
         // met à jour dans le parent
         onChangeDimensions({
-            height, width, dimAccessorie, clothingSize, length,
+            height, width,length, dimAccessorie, clothingSize, fabricLength,
             shoesSize, creamWeight, cosmeticsVolume, foodVolume, foodWeight,
             [inputType]: value, // met à jour la valeur modifiée
         });
@@ -78,21 +82,21 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
                                 <div className='flex flex-col'>
                                     <input
                                         type='number'
-                                        placeholder='Height'
-                                        value={height || ''}
-                                        onChange={(e) => handleChangeInput(e, 'height')}
-                                        className="border-2 p-2  mb-1 rounded-lg border-primary
+                                        placeholder='Width'
+                                        value={width || ''}
+                                        onChange={(e) => handleChangeInput(e, 'width')}
+                                        className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                                         dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                                     />
-                                    <div className="text-primary">
-                                        {errors.height}
+                                    <div className="mb-5 text-primary">
+                                        {errors.width}
                                     </div>
                                 </div>
                                 <div className='flex flex-col'>
                                     <select 
                                     value={selectedUnits[0]}
                                     onChange={(e) => handleChangeUnit(e, 0)}
-                                    className="border-2 p-2  mb-1 rounded-lg border-primary
+                                    className="border-2 p-2 mb-1 rounded-lg border-primary
                                     dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                                     >
                                         <option value="">Select Unit</option>
@@ -103,7 +107,7 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
                                         ))}
                                     </select>
                                     <div className="text-primary">
-                                        {errors?.units?.length > 0 ? errors.units[0] : ''}
+                                        {errors?.units?.length > 1 ? errors.units[1] : ''}
                                     </div>
                                 </div>
                             </div>
@@ -113,14 +117,14 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
                                 <div className='flex flex-col'>
                                     <input
                                         type='number'
-                                        placeholder='Width'
-                                        value={width || ''}
-                                        onChange={(e) => handleChangeInput(e, 'width')}
+                                        placeholder='Length'
+                                        value={length || ''}
+                                        onChange={(e) => handleChangeInput(e, 'length')}
                                         className="border-2 p-2 w-full mb-1 rounded-lg border-primary
                                         dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                                     />
                                     <div className="mb-5 text-primary">
-                                        {errors.width}
+                                        {errors.length}
                                     </div>
                                 </div>
                                 <div className='flex flex-col'>
@@ -143,6 +147,42 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
                                 </div>
                             </div>
                         </div>
+                        <div className='mb-4'>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                                <div className='flex flex-col'>
+                                    <input
+                                        type='number'
+                                        placeholder='Height'
+                                        value={height || ''}
+                                        onChange={(e) => handleChangeInput(e, 'height')}
+                                        className="border-2 p-2  mb-1 rounded-lg border-primary
+                                        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                    />
+                                    <div className="text-primary">
+                                        {errors.height}
+                                    </div>
+                                </div>
+                                <div className='flex flex-col'>
+                                    <select 
+                                    value={selectedUnits[2]}
+                                    onChange={(e) => handleChangeUnit(e, 2)}
+                                    className="border-2 p-2  mb-1 rounded-lg border-primary
+                                    dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                    >
+                                        <option value="">Select Unit</option>
+                                        {lengthUnits.map((element,index) => (
+                                            <option key={index} value={element}>
+                                                {element}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="text-primary">
+                                        {errors?.units?.length > 0 ? errors.units[2] : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                     </>                   
                 )
             } else if (subCategory === 'Accessories') {
@@ -198,13 +238,13 @@ export default function InputDimension({productDetails, onChangeDimensions, erro
                                  <input
                                     type='number'
                                     placeholder='Length'
-                                    value={length  || ''}
-                                    onChange={(e) => handleChangeInput(e, 'length')}
+                                    value={fabricLength  || ''}
+                                    onChange={(e) => handleChangeInput(e, 'fabricLength')}
                                     className="border-2 p-2 mb-1 rounded-lg border-primary
                                     dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                                 />
                                 <div className="mb-5 text-primary">
-                                    {errors.length}
+                                    {errors.fabricLength}
                                 </div>
                             </div>
                             <div className='flex flex-col'>
