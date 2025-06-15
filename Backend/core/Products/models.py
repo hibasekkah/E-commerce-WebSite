@@ -101,7 +101,7 @@ class Variation(models.Model):
 
 class VariationOption(models.Model):
     variation = models.ForeignKey(Variation, on_delete=models.CASCADE, db_index=True)
-    value = models.CharField(max_length=100)
+    value = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 

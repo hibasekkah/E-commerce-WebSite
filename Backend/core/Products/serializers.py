@@ -128,14 +128,9 @@ class CategoryBulkSerializer(serializers.Serializer):
 class VariationOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = VariationOption
-        fields = ['id', 'value', 'variation']  # Inclure id pour la réponse
-        read_only_fields = ['variation']  # Empêche la modification directe
+        fields = ['id', 'value', 'variation']  
+        read_only_fields = ['variation']  
 
-    def validate_value(self, value):
-        """Validation personnalisée pour la valeur"""
-        if not value.strip():
-            raise serializers.ValidationError("La valeur ne peut pas être vide")
-        return value.strip()
 
 class VariationSerializer(serializers.ModelSerializer):
     options = VariationOptionSerializer(many=True, required=False)
@@ -144,7 +139,7 @@ class VariationSerializer(serializers.ModelSerializer):
         model = Variation
         fields = ['id', 'category', 'name', 'options']
         extra_kwargs = {
-            'options': {'required': False, 'write_only': True}  # Cache dans la réponse
+            'options': {'required': False, 'write_only': True}  
         }
 
     def create(self, validated_data):
@@ -207,7 +202,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductConfigurationSerializer(serializers.ModelSerializer):
     """Formats ProductConfiguration details for API responses."""
     variation_name = serializers.CharField(source='variation_option.variation.name', read_only=True)
-    value = serializers.CharField(source='variation_option.value', read_only=True)
+    value = serializers.CharField(source='variation_option.value', read_only=True,)
 
     class Meta:
         model = ProductConfiguration
@@ -257,10 +252,8 @@ class ProductItemWriteSerializer(serializers.ModelSerializer):
     A single, powerful serializer for CREATING and UPDATING ProductItems
     with their configurations and images in a single multipart/form-data request.
     """
-    # We expect 'configurations' to be a JSON string from the form data.
+    # This setup for form-data is correct.
     configurations = serializers.CharField(required=False, write_only=True)
-    
-    # We expect 'images' to be a list of files from the form data.
     images = serializers.ListField(
         child=serializers.ImageField(allow_empty_file=False, use_url=False),
         required=False,
@@ -280,42 +273,68 @@ class ProductItemWriteSerializer(serializers.ModelSerializer):
     def validate_configurations(self, value):
         """
         Validates the incoming JSON string for configurations.
+        This method is correct and does not need to be changed.
         """
+        if not value:
+            return []
         try:
-            # Parse the string back into a Python list of dictionaries.
             configurations_data = json.loads(value)
             if not isinstance(configurations_data, list):
                 raise serializers.ValidationError("Configurations must be a JSON-encoded list.")
-            # You can add more validation for the inner objects if needed.
             return configurations_data
         except json.JSONDecodeError:
             raise serializers.ValidationError("Invalid JSON format for configurations.")
 
     def _get_or_create_variation_option(self, product, config_data):
         """
+        *** THIS IS THE CORRECTED HELPER METHOD ***
         The core logic. Finds or creates the necessary Variation and VariationOption.
-        (This helper method remains the same)
+        This version correctly handles empty or null values.
         """
         variation_name = config_data.get('variation_name', '').strip()
-        value = config_data.get('value', '').strip()
         
-        if not variation_name or not value:
-            raise serializers.ValidationError("Variation name and value cannot be empty.")
+        # --- FIX STARTS HERE ---
+        # 1. We only validate that the variation_name exists. The value can be empty.
+        if not variation_name:
+            raise serializers.ValidationError("Variation name cannot be empty in configurations.")
+        
+        # 2. Safely get the value. It could be missing from the JSON, null, or an empty string.
+        value = config_data.get('value')
 
+        # Find or create the parent Variation (e.g., 'Color') for the product's category.
         variation, _ = Variation.objects.get_or_create(
-            category=product.category, name__iexact=variation_name,
+            category=product.category,
+            name__iexact=variation_name,
             defaults={'name': variation_name}
         )
+        
+        # 3. Handle the lookup intelligently based on whether the value is null or a string.
+        lookup_kwargs = {'variation': variation}
+        defaults = {'variation': variation}
+
+        if value is None:
+            # If the provided value is null, we look for an existing record where the value is NULL.
+            lookup_kwargs['value__isnull'] = True
+            defaults['value'] = None
+        else:
+            # If a value is provided (even an empty string), we use it.
+            stripped_value = str(value).strip()
+            lookup_kwargs['value__iexact'] = stripped_value
+            defaults['value'] = stripped_value
+
         variation_option, _ = VariationOption.objects.get_or_create(
-            variation=variation, value__iexact=value,
-            defaults={'value': value}
+            **lookup_kwargs,
+            defaults=defaults
         )
+        # --- FIX ENDS HERE ---
+        
         return variation_option
 
     @transaction.atomic
     def create(self, validated_data):
         """
         Handles creating the ProductItem and all its related data.
+        This method does not need to be changed; it relies on the corrected helper above.
         """
         if 'product' not in validated_data:
             raise serializers.ValidationError({"product": "This field is required for creation."})
@@ -348,6 +367,29 @@ class ProductItemWriteSerializer(serializers.ModelSerializer):
                 )
             
         return product_item
+
+    # You would also have an update method here that re-uses the same helper.
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        product = instance.product
+        configurations_data = validated_data.pop('configurations', None)
+        image_files = validated_data.pop('images', []) # Handle image updates if needed
+        
+        instance = super().update(instance, validated_data)
+
+        if configurations_data is not None:
+            instance.productconfiguration_set.all().delete()
+            configs_to_create = [
+                ProductConfiguration(
+                    product_item=instance,
+                    variation_option=self._get_or_create_variation_option(product, config_data)
+                ) for config_data in configurations_data
+            ]
+            ProductConfiguration.objects.bulk_create(configs_to_create)
+
+        # Add logic to handle image updates/deletions here if required
+
+        return instance
 
 
 
