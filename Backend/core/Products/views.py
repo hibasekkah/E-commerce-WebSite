@@ -244,51 +244,58 @@ class ProductItemDetailView(APIView):
 
 class ProductItemViewSet(viewsets.ModelViewSet):
     """
-    A complete ViewSet for listing, retrieving, creating, updating,
-    and deleting ProductItems. Handles both JSON and multipart/form-data.
+    A ViewSet that manually handles the create operation.
     """
     queryset = ProductItem.objects.filter(deleted_at__isnull=True).prefetch_related(
         'images', 'productconfiguration_set__variation_option__variation'
     )
-    # Add parsers to handle form data for file uploads
-    parser_classes = [MultiPartParser, FormParser] 
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return ProductItemWriteSerializer
         return ProductItemSerializer
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         """
-        Overrides the default create method to handle multipart data correctly.
+        We override the entire create method to have full control.
+        This replaces the logic you had in `perform_create`.
         """
-        # We manually build the data dictionary to pass to the serializer.
-        # This ensures getlist() is used for images.
+        print("--- DEBUGGING FILE UPLOAD ---")
+        print("request.data:", request.data)
+        print("request.FILES:", request.FILES)
+        print("-----------------------------")
+        # 1. Manually build the data dictionary from the request.
         data_for_serializer = {
-            'product': self.request.data.get('product'),
-            'price': self.request.data.get('price'),
-            'stock_quantity': self.request.data.get('stock_quantity'),
-            'sku': self.request.data.get('sku'),
-            'display_order': self.request.data.get('display_order', 0),
-            'status': self.request.data.get('status', 'ACTIVE'),
-            'configurations': self.request.data.get('configurations', '[]'), # Send as string
-            'images': self.request.FILES.getlist('images')
+            'product': request.data.get('product'),
+            'price': request.data.get('price'),
+            'stock_quantity': request.data.get('stock_quantity'),
+            'sku': request.data.get('sku'),
+            'display_order': request.data.get('display_order', 0),
+            'status': request.data.get('status', 'ACTIVE'),
+            'configurations': request.data.get('configurations', '[]'),
+            'images': request.FILES.getlist('images')
         }
-        # Re-initialize the serializer with the structured data
+
+        # 2. Initialize the serializer with this structured data.
         serializer = self.get_serializer(data=data_for_serializer)
+        
+        # 3. Validate and save.
         serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer) # We can still call perform_create here to add user, etc.
+
+        # 4. Manually build the success response.
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        # The 'perform_create' method is now back to its intended purpose:
+        # simply saving the serializer. You could add extra data here if needed.
         serializer.save()
 
     def perform_destroy(self, instance):
-        """
-        Overrides the default hard-delete to perform a soft-delete.
-        This is now corrected to use Django's timezone utility.
-        """
-        # This line will now work because of the import at the top of the file.
         instance.deleted_at = timezone.now()
         instance.status = 'INACTIVE'
-        
-        # Save the changes to the database
         instance.save(update_fields=['deleted_at', 'status', 'updated_at'])
 
         

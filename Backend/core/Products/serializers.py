@@ -263,7 +263,7 @@ class ProductItemWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductItem
         fields = [
-            'product', 'price', 'stock_quantity', 'sku',
+            'id','product', 'price', 'stock_quantity', 'sku',
             'display_order', 'status', 'configurations', 'images'
         ]
         extra_kwargs = {
