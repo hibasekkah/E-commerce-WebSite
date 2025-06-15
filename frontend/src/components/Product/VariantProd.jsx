@@ -258,6 +258,9 @@ export default function VariantProd() {
       setMessage("Failed to add items. Please try again.");
       setMessageStatus(true);
     }
+    setTimeout(() => {
+      setMessage('');
+    }, 2000);
   }
 
 
