@@ -471,13 +471,13 @@ class ProductItemUpdateSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for product listings"""
     category_name = serializers.CharField(source='category.name', read_only=True)
-    items_count = serializers.SerializerMethodField()
+    items = items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'category', 'category_name',
-            'status', 'display_order', 'items_count',
+            'status', 'display_order', 'items',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']

@@ -1,129 +1,141 @@
-from django.db import models
-
-# Create your models here.
+from decimal import Decimal
+from django.db import models, transaction
 from django.conf import settings
 from django.core.validators import MinValueValidator
 
+# It's good practice to define choices as constants for reusability
+class OrderStatus(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'          # Order received, waiting for payment confirmation
+    PROCESSING = 'PROCESSING', 'Processing'  # Payment confirmed, order is being prepared
+    SHIPPED = 'SHIPPED', 'Shipped'          # Order has been dispatched
+    DELIVERED = 'DELIVERED', 'Delivered'      # Order has been received by the customer
+    CANCELLED = 'CANCELLED', 'Cancelled'      # Order was cancelled by user or admin
+    REFUNDED = 'REFUNDED', 'Refunded'        # Order was returned and refunded
+    FAILED = 'FAILED', 'Failed'            # Order failed due to payment or other issue
 
 class ShippingMethod(models.Model):
+    """
+    Stores the available shipping options and their base prices.
+    e.g., "Standard Ground", "Express Overnight"
+    """
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     
     def __str__(self):
         return f"{self.name} (${self.price})"
 
+
 # class Order(models.Model):
-#     STATUS_CHOICES = [
-#         ('PENDING', 'Pending'),
-#         ('PROCESSING', 'Processing'),
-#         ('SHIPPED', 'Shipped'),
-#         ('DELIVERED', 'Delivered'),
-#         ('CANCELLED', 'Cancelled'),
-#         ('REFUNDED', 'Refunded'),
-#         ('FAILED', 'Failed'),
-#         ('ON_HOLD', 'On Hold'),
-#     ]
-
-#     # Primary key
-#     id = models.AutoField(primary_key=True)
-
-#     # Foreign keys
+#     """
+#     Represents the complete record of a customer's purchase. It acts as an
+#     immutable "snapshot" of all details at the time of purchase for historical accuracy.
+#     """
+#     # --- Core Relationships ---
 #     user = models.ForeignKey(
 #         settings.AUTH_USER_MODEL,
-#         on_delete=models.CASCADE,
-#         related_name='orders'
-#     )
-#     payment_method = models.ForeignKey(
-#         'UserPaymentMethod',
-#         on_delete=models.SET_NULL,
+#         on_delete=models.SET_NULL, 
 #         null=True,
-#         blank=True
+#         related_name='orders',
+#         help_text="The customer who placed the order."
 #     )
-#     shipping_address = models.ForeignKey(
-#         'Address',
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         related_name='orders'
+#     payment = models.OneToOneField(
+#         'Payments.Payment',         
+#         on_delete=models.SET_NULL,  
+#         null=True, blank=True,
+#         related_name='order',
+#         help_text="The financial transaction associated with this order."
 #     )
-#     shipping_method = models.ForeignKey(
-#         'ShippingMethod',
-#         on_delete=models.SET_NULL,
-#         null=True
-#     )
-
-#     # Status field with choices
+    
+#     # --- Fulfillment & Shipping ---
 #     status = models.CharField(
 #         max_length=20,
-#         choices=STATUS_CHOICES,
-#         default='PENDING',
-#         db_index=True
+#         choices=OrderStatus.choices,
+#         default=OrderStatus.PENDING,
+#         db_index=True,
+#         help_text="The current fulfillment status of the order."
 #     )
+#     # --- CRITICAL: Address is stored as a snapshot, not a foreign key ---
+#     shipping_address_snapshot = models.JSONField(
+#         null=True, blank=True,
+#         help_text="A JSON copy of the shipping address at the time of order creation."
+#     )
+#     # --- CRITICAL: Shipping details are stored as a snapshot ---
+#     shipping_method_name = models.CharField(max_length=100, blank=True)
+#     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     tracking_number = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    
+#     # --- Financial Snapshot ---
+#     # These fields store a permanent record of the order's value.
+#     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     order_total = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_index=True)
 
-#     # Date fields
-#     order_date = models.DateTimeField(auto_now_add=True)
+#     # --- Timestamps & Notes ---
+#     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 #     updated_at = models.DateTimeField(auto_now=True)
-
-#     # Financial fields
-#     order_total = models.DecimalField(
-#         max_digits=10,
-#         decimal_places=2,
-#         default=0
-#     )
-#     shipping_cost = models.DecimalField(
-#         max_digits=10,
-#         decimal_places=2,
-#         default=0
-#     )
-#     tax_amount = models.DecimalField(
-#         max_digits=10,
-#         decimal_places=2,
-#         default=0
-#     )
-
-#     # Tracking information
-#     tracking_number = models.CharField(max_length=100, blank=True, null=True)
-#     tracking_url = models.URLField(blank=True, null=True)
-
-#     # Additional information
-#     notes = models.TextField(blank=True, null=True)
+#     notes = models.TextField(blank=True, null=True, help_text="Internal notes for this order.")
 #     cancellation_reason = models.TextField(blank=True, null=True)
 
 #     class Meta:
-#         ordering = ['-order_date']
-#         indexes = [
-#             models.Index(fields=['status']),
-#             models.Index(fields=['user', 'status']),
-#             models.Index(fields=['order_date', 'status']),
-#         ]
+#         ordering = ['-created_at']
+#         verbose_name = "Order"
+#         verbose_name_plural = "Orders"
 
 #     def __str__(self):
-#         return f"Order #{self.id} - {self.user.email} ({self.get_status_display()})"
+#         return f"Order #{self.id} for {self.user.email if self.user else 'Guest'}"
 
-#     def update_total(self):
-#         """Recalculates order total from order lines"""
-#         subtotal = sum(line.line_total for line in self.order_lines.all())
-#         self.order_total = subtotal + self.shipping_cost + self.tax_amount
-#         self.save()
+#     @transaction.atomic
+#     def recalculate_totals(self):
+#         """
+#         Recalculates and saves order totals from its line items.
+#         Should be called whenever an order is created or its lines change.
+#         """
+#         calculated_subtotal = self.lines.aggregate(
+#             total=models.Sum(models.F('quantity') * models.F('price'))
+#         )['total'] or Decimal('0.00')
 
-#     @property
-#     def subtotal(self):
-#         """Sum of all order lines before shipping and tax"""
-#         return sum(line.line_total for line in self.order_lines.all())
+#         self.subtotal = calculated_subtotal
+#         self.order_total = self.subtotal + self.shipping_cost + self.tax_amount - self.discount_amount
+        
+#         self.save(update_fields=['subtotal', 'order_total'])
+#         return self
 
-#     @property
-#     def item_count(self):
-#         """Total number of items in the order"""
-#         return sum(line.quantity for line in self.order_lines.all())
 
 # class OrderLine(models.Model):
-#     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_lines')
-#     product_item = models.ForeignKey('ProductItem', on_delete=models.SET_NULL, null=True)
+#     """
+#     Represents a single line item within an Order. This model "freezes" the
+#     product details and price at the time of purchase.
+#     """
+#     order = models.ForeignKey(
+#         Order,
+#         on_delete=models.CASCADE,
+#         related_name='lines' # Allows my_order.lines.all()
+#     )
+#     product_item = models.ForeignKey(
+#         'products.ProductItem',     # Assumes a 'products' app
+#         on_delete=models.SET_NULL,  # Keep line item even if product is deleted
+#         null=True
+#     )
+    
+#     # --- CRITICAL: Product details are stored as a snapshot ---
+#     product_sku = models.CharField(max_length=100, blank=True, db_index=True)
+#     product_name = models.CharField(max_length=255)
+    
+#     # --- CRITICAL: Financial details are stored as a snapshot ---
 #     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
-#     price = models.DecimalField(max_digits=10, decimal_places=2)
-    
-#     def __str__(self):
-#         return f"{self.quantity} x {self.product_item} in Order #{self.order.id}"
-    
+#     price = models.DecimalField(
+#         max_digits=10, decimal_places=2,
+#         help_text="Price of a single item at the time of purchase."
+#     )
+
 #     @property
 #     def line_total(self):
+#         """Calculates the total price for this line item."""
 #         return self.quantity * self.price
+
+#     def __str__(self):
+#         return f"{self.quantity} x {self.product_name or self.product_sku} in Order #{self.order.id}"
+
+#     class Meta:
+#         ordering = ['id'] # Order lines by creation order
