@@ -567,14 +567,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
 class ProductDeleteSerializer(serializers.Serializer):
     """Serializer for product deletion (soft delete)"""
-    confirm_deletion = serializers.BooleanField(required=True)
     delete_reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
     
-    def validate_confirm_deletion(self, value):
-        """Ensure deletion is confirmed"""
-        if not value:
-            raise serializers.ValidationError("Must confirm deletion by setting to true")
-        return value
     
     def save(self, product):
         """Perform soft delete on the product"""

@@ -46,3 +46,4 @@ pyvenv.cfg
 Pipfile.lock
 .python-version
 
+package-lock.json
