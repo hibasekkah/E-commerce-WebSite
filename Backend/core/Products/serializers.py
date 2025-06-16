@@ -471,19 +471,18 @@ class ProductItemUpdateSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for product listings"""
     category_name = serializers.CharField(source='category.name', read_only=True)
-    items = items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
+    items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
+    active_discount_rate = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
     
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'category', 'category_name',
-            'status', 'display_order', 'items',
+            'status', 'display_order','active_discount_rate', 'items',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
     
-    def get_items_count(self, obj):
-        return obj.productitem_set.filter(deleted_at__isnull=True).count()
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -776,125 +775,57 @@ class ProductImageBulkSerializer(serializers.Serializer):
 
 
 from rest_framework import serializers
-from .models import Promotion, PromotionProduct, ProductItem
-
-class ProductItemForPromotionSerializer(serializers.ModelSerializer):
-    """
-    A lightweight serializer to represent a ProductItem within a promotion list.
-    """
-    class Meta:
-        model = ProductItem
-        fields = ['id', 'sku', 'price'] # Add any other fields you want to see here
-
-class PromotionProductSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the 'through' model, showing the product details.
-    """
-    product = ProductItemForPromotionSerializer(read_only=True)
-
-    class Meta:
-        model = PromotionProduct
-        fields = ['id', 'product', 'display_order']
-
+from .models import Promotion, Product # Make sure to import Product
+from django.utils import timezone
 
 class PromotionSerializer(serializers.ModelSerializer):
     """
-    READ-ONLY serializer for listing and retrieving Promotions.
-    Includes a nested list of all associated products.
+    Handles CRUD for a Promotion, ensuring no date overlaps for the same product.
     """
-    # Uses the related_name 'products' we added to the model
-    products = PromotionProductSerializer(many=True, read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
         model = Promotion
         fields = [
-            'id', 
-            'name', 
-            'description', 
-            'discount_rate', 
-            'start_date', 
-            'end_date', 
-            'is_active', 
-            'display_order',
-            'products', # Nested list of products in the promotion
-            'created_at',
-            'updated_at',
+            'id', 'product', 'product_name', 'name', 'description',
+            'discount_rate', 'start_date', 'end_date', 'is_active'
         ]
+        read_only_fields = ['id']
 
-
-class PromotionCreateUpdateSerializer(serializers.ModelSerializer):
-    """
-    WRITE-ONLY serializer for creating and updating Promotions.
-    Accepts a list of product item IDs to associate with the promotion.
-    """
-    # This field will accept a list of integers (ProductItem IDs)
-    product_items = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False,
-        help_text="A list of ProductItem IDs to include in this promotion."
-    )
-
-    class Meta:
-        model = Promotion
-        fields = [
-            'name', 
-            'description', 
-            'discount_rate', 
-            'start_date', 
-            'end_date', 
-            'is_active', 
-            'display_order',
-            'product_items',
-        ]
-
-    def create(self, validated_data):
+    def validate(self, data):
         """
-        Handle creating a Promotion and its associated ProductItems.
+        Perform all cross-field validations:
+        1. Ensure end_date is after start_date.
+        2. Enforce the business rule: no overlapping active promotions for this product.
         """
-        product_item_ids = validated_data.pop('product_items', [])
-        promotion = Promotion.objects.create(**validated_data)
+        product = data.get('product', getattr(self.instance, 'product', None))
+        start_date = data.get('start_date', getattr(self.instance, 'start_date', None))
+        end_date = data.get('end_date', getattr(self.instance, 'end_date', None))
 
-        if product_item_ids:
-            # Create the links in the through model
-            promo_products = [
-                PromotionProduct(promotion=promotion, product_id=pid)
-                for pid in product_item_ids
-            ]
-            PromotionProduct.objects.bulk_create(promo_products)
-        
-        return promotion
+        # 1. Date Logic Validation
+        if start_date and end_date and end_date <= start_date:
+            raise serializers.ValidationError({"end_date": "End date must be after start date."})
 
-    def update(self, instance, validated_data):
-        """
-        Handle updating a Promotion and its associated ProductItems.
-        """
-        product_item_ids = validated_data.pop('product_items', None)
-        
-        # Update the Promotion instance itself
-        instance = super().update(instance, validated_data)
-
-        # If a list of product_items was provided, update the relationship
-        if product_item_ids is not None:
-            # Easiest way to handle updates: delete old links and create new ones.
-            instance.products.all().delete()
+        # 2. Overlap Validation
+        if product and start_date and end_date:
+            # Find any other promotions for this SAME product that overlap in time.
+            conflicting_promotions = Promotion.objects.filter(
+                product=product,
+                start_date__lte=end_date,
+                end_date__gte=start_date
+            )
             
-            promo_products = [
-                PromotionProduct(promotion=instance, product_id=pid)
-                for pid in product_item_ids
-            ]
-            PromotionProduct.objects.bulk_create(promo_products)
-
-        return instance
-    
-
-
-class ProductItemReadOnlySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductItem
-        fields = ['id', 'sku', 'product'] # Add name from product if needed
-        # Example to get product name:
-        # name = serializers.CharField(source='product.name', read_only=True)
+            # If we are UPDATING, we must exclude the current instance from the check.
+            if self.instance:
+                conflicting_promotions = conflicting_promotions.exclude(pk=self.instance.pk)
+            
+            if conflicting_promotions.exists():
+                raise serializers.ValidationError(
+                    "This product already has another promotion scheduled during these dates. "
+                    "Please choose a different time frame."
+                )
+        
+        return data
 
 
 class ProductItemStockAdjustSerializer(serializers.Serializer):

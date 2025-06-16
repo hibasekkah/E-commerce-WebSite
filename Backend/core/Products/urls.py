@@ -3,15 +3,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemDetailView, ProductItemStockAdjustView, ProductItemViewSet, ProductListView, PromotionListCreateAPIView, PromotionRetrieveUpdateDestroyAPIView,
-    VariationViewSet, VariationOptionViewSet
+    CategoryCreateView, CategorylistView, ProductBulkStatusView, ProductDetailView, ProductImageBulkView, ProductImageView, ProductItemDetailView, ProductItemStockAdjustView, ProductItemViewSet, ProductListView, 
+    VariationViewSet, VariationOptionViewSet,PromotionViewSet
 )
 
 router = DefaultRouter()
 router.register(r'variations', VariationViewSet, basename='variation')
 router.register(r'variation-options', VariationOptionViewSet, basename='variation-option')
 router.register(r'items', ProductItemViewSet, basename='product-item')
-
+router.register(r'promotions', PromotionViewSet, basename='promotion')
 
 urlpatterns = [
     path('categories/create/', CategoryCreateView.as_view(), name='create-category'),
@@ -33,6 +33,4 @@ urlpatterns = [
     path('product-items/<int:item_id>/images/<int:image_id>/', ProductImageView.as_view(), name='product-image-detail'),
     path('product-images/bulk/', ProductImageBulkView.as_view(), name='product-images-bulk'),
 
-    path('promotions/', PromotionListCreateAPIView.as_view(), name='promotion-list-create'),
-    path('promotions/<int:pk>/', PromotionRetrieveUpdateDestroyAPIView.as_view(), name='promotion-detail'),
 ]
