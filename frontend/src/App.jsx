@@ -28,6 +28,8 @@ import AddProdPage from "./components/Product/AddProdPage";
 import VariantProdPage from "./components/Product/VariantProdPage";
 import ProdDeletePage from "./components/Product/ProdDeletePage";
 import AddQuantityProdPage from "./components/Product/AddQuantityProdPage";
+import Promotions from "./components/Promotions/Promotions";
+import PromotionAdd from "./components/Promotions/PromotionAdd";
 
 
 const Products = [
@@ -134,6 +136,12 @@ function App() {
             <Route path='/Product/Add/Quantity' element = {
               <AddQuantityProdPage />
             } />
+            <Route path='/Promotions' element = {
+              <Promotions />
+            } />
+            <Route path="/Promotions/Add" element = {
+              <PromotionAdd />
+            }/>
           </Routes>
         <Footer />
       </Router>

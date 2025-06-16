@@ -11,7 +11,7 @@ const Menu = [
   { id: 2, name: 'Products', link: '/Product' },
   { id: 3, name: 'Orders', link: '#' },
   { id: 4, name: 'Customer Support', link: '/#' },
-  { id: 5, name: 'Promotions', link: '/#'}
+  { id: 5, name: 'Promotions', link: '/Promotions'}
 ];
 
 const ProfileElements = [
