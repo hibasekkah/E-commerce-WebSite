@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Trash2} from 'lucide-react';
 import { SearchX } from 'lucide-react';
+import axios from 'axios';
 
 
 const hasProd = (catProds, type) => {
@@ -28,9 +29,36 @@ const hasProd = (catProds, type) => {
 };
 
 
-export default function CatProdDelete({ catProds, delay, searchValue, searchType }) {
+
+
+
+export default function CatProdDelete({ catProds, delay, searchValue, searchType, onDelete, setMessage, setMessageStatus }) {
+    
 
     let countProd = 0;
+    const deleteProd = async (id) => {
+        const confirmed = window.confirm("Are you sure you want to delete this product?");
+        if (!confirmed) return;
+        try{
+            const res = await axios.delete(`http://localhost:8000/api/products/${id}/`);
+            if(res.status === 200 || res.status === 204) {
+                setMessage('Product has been deleted successfully!');
+                setMessageStatus(false);
+                if (onDelete) onDelete();
+            } else {
+                setMessage('Failed to delete the product. Please try again.');
+                setMessageStatus(true);
+            }
+
+        }catch(error){
+            setMessage('Failed to delete the product. Please try again.');
+            setMessageStatus(true);
+        }
+        setTimeout(() => {
+            setMessage('');
+        }, 2000);
+    
+}
     
     const includeCat =  searchType === 'category' ? 
                         (searchValue === '' || (searchValue !== '' && catProds.name.toLowerCase().includes(searchValue.toLowerCase())))
@@ -61,7 +89,10 @@ export default function CatProdDelete({ catProds, delay, searchValue, searchType
                                                 includeProd ?
                                                 <tr key={prod.id} className='border-b-2 border-primary'>
                                                     <td className=' py-2 pl-5 flex gap-4'>
-                                                        <button className='text-secondary'><Trash2 /></button>
+                                                        <button className='text-secondary'
+                                                        onClick={() => {
+                                                            deleteProd(prod.id)
+                                                        }}><Trash2 /></button>
                                                         <p>{prod.name}</p>
                                                     </td>
                                                 </tr> : null
@@ -81,6 +112,7 @@ export default function CatProdDelete({ catProds, delay, searchValue, searchType
                                     </tr>
                                 )}
                                 </React.Fragment>
+                                
                             )
                         })
                     ) : (
@@ -96,7 +128,10 @@ export default function CatProdDelete({ catProds, delay, searchValue, searchType
                                 return includeProd ? (
                                 <tr key={prod.id} className='border-b-2 border-primary'>
                                     <td className=' py-2 pl-5 flex gap-4'>
-                                    <button className='text-secondary'><Trash2 /></button>
+                                    <button className='text-secondary'
+                                    onClick={() => {
+                                        deleteProd(prod.id)
+                                    }}><Trash2 /></button>
                                     <p>{prod.name}</p>
                                     </td>
                                 </tr>
