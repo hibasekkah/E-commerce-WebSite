@@ -243,7 +243,13 @@ class ProductImage(models.Model):
 
 class Promotion(models.Model):
     name = models.CharField(max_length=200, db_index=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True,)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        # This allows you to find all promotions for a product: my_product.promotions.all()
+        related_name='promotions' 
+    )
     discount_rate = models.DecimalField(
         max_digits=5, 
         decimal_places=2,
@@ -270,23 +276,6 @@ class Promotion(models.Model):
 
     def __str__(self):
         return self.name
-
-class PromotionProduct(models.Model):
-    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE, db_index=True)
-    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, db_index=True,related_name='products')
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Ordre d'affichage des produits en promotion"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('product', 'promotion')
-        ordering = ['display_order']
-        indexes = [
-            models.Index(fields=['product', 'promotion']),
-            models.Index(fields=['promotion', 'created_at']),
-        ]
 
 class ProductQuestion(models.Model):
     STATUS_CHOICES = [

@@ -105,24 +105,41 @@ from .serializers import (
     ProductImageBulkSerializer,
     ProductImageCreateUpdateSerializer
 )
+from django.db.models import Subquery, OuterRef
+
 
 
 class ProductListView(APIView):
-    """List all products or create a new product with image support"""
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
+    """
+    List all products, using the ProductFilter for advanced filtering.
+    """
     def get(self, request):
-        # Start with the base queryset
-        queryset = Product.objects.filter(deleted_at__isnull=True).select_related('category')
+        now = timezone.now()
         
-        # Instantiate the filterset with the request's query parameters and the initial queryset
-        filterset = ProductFilter(request.query_params, queryset=queryset)
+        # 1. Define the subquery to find the discount rate of an active promotion.
+        active_promotion_subquery = Promotion.objects.filter(
+            product=OuterRef('pk'),
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        ).order_by('-discount_rate')
+
+        # 2. Start with the base queryset and IMMEDIATELY annotate it.
+        # This adds the 'active_discount_rate' field to every product object
+        # before any filtering happens.
+        base_queryset = Product.objects.filter(
+            deleted_at__isnull=True
+        ).select_related('category').annotate(
+            active_discount_rate=Subquery(active_promotion_subquery.values('discount_rate')[:1])
+        )
+
+        # 3. Instantiate the filterset with the *annotated* queryset.
+        filterset = ProductFilter(request.query_params, queryset=base_queryset)
         
-        # 'filterset.qs' is the final, filtered queryset
+        # 4. 'filterset.qs' is the final, filtered queryset.
         filtered_queryset = filterset.qs
         
-        # You can add pagination here later if needed
-        
+        # 5. Serialize the final result. The serializer will find 'active_discount_rate'.
         serializer = ProductListSerializer(filtered_queryset, many=True, context={'request': request})
         
         return Response({
@@ -132,9 +149,8 @@ class ProductListView(APIView):
         })
 
     def post(self, request):
-        # Parse the request data
+        # Your post method remains unchanged.
         data = request.data.copy()
-        
         serializer = ProductCreateSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             product = serializer.save()
@@ -434,45 +450,36 @@ class ProductBulkStatusView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-from rest_framework import generics
 from .models import Promotion
-from .serializers import PromotionSerializer, PromotionCreateUpdateSerializer
+from .serializers import PromotionSerializer
+# from .permissions import IsAdminOrReadOnly # Example permission
 
-class PromotionListCreateAPIView(generics.ListCreateAPIView):
+class PromotionViewSet(viewsets.ModelViewSet):
     """
-    API endpoint for listing all promotions or creating a new one.
-    - GET: Returns a list of all active promotions with their products.
-    - POST: Creates a new promotion.
-    """
-    # Prefetch related products to avoid N+1 query issues on list view
-    queryset = Promotion.objects.filter(is_active=True).prefetch_related('products__product')
-
-    def get_serializer_class(self):
-        """
-        Use PromotionCreateUpdateSerializer for POST requests (creating),
-        and PromotionSerializer for GET requests (listing).
-        """
-        if self.request.method == 'POST':
-            return PromotionCreateUpdateSerializer
-        return PromotionSerializer
-
-class PromotionRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    API endpoint for retrieving, updating, or deleting a single promotion.
-    - GET: Retrieve a single promotion's details.
-    - PUT/PATCH: Update a promotion.
-    - DELETE: Delete a promotion.
-    """
-    queryset = Promotion.objects.all().prefetch_related('products__product')
+    API endpoint for managing product-specific promotions.
     
-    def get_serializer_class(self):
+    Provides `list`, `create`, `retrieve`, `update`, and `destroy` actions.
+    The custom serializer logic prevents creating promotions with overlapping
+    dates for the same product.
+    
+    To see all promotions for a specific product, you can filter by its ID:
+    `/api/promotions/?product=4`
+    """
+    queryset = Promotion.objects.all().select_related('product').order_by('-start_date')
+    serializer_class = PromotionSerializer
+    # permission_classes = [IsAdminUser] # Protect this endpoint in production
+
+    def get_queryset(self):
         """
-        Use PromotionCreateUpdateSerializer for updates (PUT/PATCH),
-        and PromotionSerializer for retrieval (GET).
+        Optionally filter the promotions list by product_id.
         """
-        if self.request.method in ['PUT', 'PATCH']:
-            return PromotionCreateUpdateSerializer
-        return PromotionSerializer
+        queryset = super().get_queryset()
+        product_id = self.request.query_params.get('product')
+        
+        if product_id:
+            queryset = queryset.filter(product_id=product_id)
+            
+        return queryset
     
 
 class ProductItemStockAdjustView(APIView):
