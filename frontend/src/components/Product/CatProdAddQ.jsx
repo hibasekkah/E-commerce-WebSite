@@ -27,8 +27,10 @@ const hasProd = (catProds, type) => {
   return false;
 };
 
-export default function CatProdAddQ({ catProds, delay, searchValue, searchType, incrementNumberCat }) {
+export default function CatProdAddQ({ catProds, delay, searchValue, searchType, setMessage, setMessageStatus }) {
     let countProd = 0;
+
+    
       
     const includeCat =  searchType === 'category' ? 
                         (searchValue === '' || (searchValue !== '' && catProds.name.toLowerCase().includes(searchValue.toLowerCase())))
@@ -58,7 +60,8 @@ export default function CatProdAddQ({ catProds, delay, searchValue, searchType, 
                                                                 : true;
                                             if (includeProd) countProd++;
                                             return includeProd ? (
-                                                <ProductRow key={prod.id} prod={prod} headVariants={subCat.headVariants} />
+                                                <ProductRow key={prod.id} prod={prod} headVariants={subCat.headVariants} 
+                                                setMessage={setMessage} setMessageStatus={setMessageStatus}/>
                                             ) : null;
                                         
                                     }))
@@ -88,7 +91,8 @@ export default function CatProdAddQ({ catProds, delay, searchValue, searchType, 
                                 : true;
                                 if (includeProd) countProd++;
                                 return includeProd ? (
-                                    <ProductRow key={prod.id} prod={prod} headVariants={catProds.headVariants} />
+                                    <ProductRow key={prod.id} prod={prod} headVariants={catProds.headVariants}
+                                    setMessage={setMessage} setMessageStatus={setMessageStatus} />
                                 ) : null;
                             })}
                             {countProd === 0 && (

@@ -142,7 +142,7 @@ export default function ProdDelete() {
 
   return (
     <div className='mt-5'>
-      <p className={messageStatus ? 'text-primary' : 'text-blue-600 text-center'}>{message}</p>
+      <p className={`${messageStatus ? 'text-primary' : 'text-blue-600'} text-center`}>{message}</p>
       <div className='mt-5'>
       {/* Champ de recherche */}
         <div className='flex flex-col justify-center items-center '>

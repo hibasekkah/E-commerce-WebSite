@@ -108,66 +108,69 @@ export default function AddQuantityProd() {
     const [searchValue, setSearchValue] = useState('');
     const [searchType, setSearchType] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [categories, setCategories] = useState([]); 
+    const [message, setMessage] = useState("");
+    const [messageStatus, setMessageStatus] = useState(false);
     
-    useEffect(() => {
-      const loadProdsCategorie =async () => {
-        const prods = await loadProdsFromDB();
-        prodsCategories.forEach(category => {
-        if(category.products) category.products = [];
-        if(category.content) {
-          category.content.forEach(subCat => {
-            if(subCat.products) subCat.products = [];
+    const loadProdsCategorie =async () => {
+      const prods = await loadProdsFromDB();
+
+      const localCategories = prodsCategories.map(cat => ({
+        ...cat,
+        products: cat.products ? [] : undefined,
+        content: cat.content ? cat.content.map(sub => ({ ...sub, products: [] })) : undefined
+      }));
+
+      prods.forEach((product) => {
+      localCategories.forEach((category) => {
+        if (product.category === category.id) {
+          const newProduct = { id: product.id, name: product.name };
+          const variations = [];
+
+          product.items.forEach((item) => {
+            const variation = [item.id];
+            let i = 1;
+            for (const key in item.variations) {
+              variation[i] = item.variations[key]; // Ex: ClotheSize, Color, etc.
+              i++;
+            }
+            variations.push(variation);
+          });
+
+          newProduct.variations = variations;
+          category.products.push(newProduct);
+
+        } else if (category?.content) {
+          category.content.forEach((subCategory) => {
+            if (product.category === subCategory.id) {
+              const newProduct = { id: product.id, name: product.name };
+
+              const variations = [];
+
+              product.items.forEach((item) => {
+                  const variation = [item.id];
+                  let i = 1;
+                  for (const key in item.variations) {
+                  variation[i] = item.variations[key];
+                  i++;
+                  }
+                  variations.push(variation);
+              });
+
+              newProduct.variations = variations;
+              
+
+              subCategory.products.push(newProduct);
+            }
           });
         }
-        });
-        prods.forEach((product) => {
-        prodsCategories.forEach((category) => {
-          if (product.category === category.id) {
-            const newProduct = { id: product.id, name: product.name };
-            const variations = [];
-
-            product.items.forEach((item) => {
-              const variation = [item.id];
-              let i = 1;
-              for (const key in item.variations) {
-                variation[i] = item.variations[key]; // Ex: ClotheSize, Color, etc.
-                i++;
-              }
-              variations.push(variation);
-            });
-
-            newProduct.variations = variations;
-            category.products.push(newProduct);
-
-          } else if (category?.content) {
-            category.content.forEach((subCategory) => {
-              if (product.category === subCategory.id) {
-                const newProduct = { id: product.id, name: product.name };
-
-                const variations = [];
-
-                product.items.forEach((item) => {
-                    const variation = [item.id];
-                    let i = 1;
-                    for (const key in item.variations) {
-                    variation[i] = item.variations[key];
-                    i++;
-                    }
-                    variations.push(variation);
-                });
-
-                newProduct.variations = variations;
-                
-
-                subCategory.products.push(newProduct);
-              }
-            });
-          }
-        });
       });
-        setIsLoading(false);
-      };
-  
+    });
+      setCategories(localCategories); 
+      setIsLoading(false);
+    };
+
+    useEffect(() => {  
       loadProdsCategorie();
     }, [])
   
@@ -176,37 +179,42 @@ export default function AddQuantityProd() {
     
     return (
       <div className='mt-5'>
-        <div className='flex flex-col justify-center items-center'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 w-1/2'>
-            <input 
-              type='text'
-              value={searchValue}
-              placeholder="Enter your search..."
-              onChange={(e) => setSearchValue(e.target.value)}
-              className="border-2 p-2 mb-1 rounded-lg border-primary
-              dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"                         
-            />
-            <select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              className="border-2 p-2  mb-1 rounded-lg border-primary
-              dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"  
-            >
-              <option value='' >Search By</option>
-              <option value='category' >Category</option>
-              <option value='productName' >Product name</option>
-            </select>
+        <p className={`${messageStatus ? 'text-primary' : 'text-blue-600'} text-center`}>{message}</p>
+        <div className='mt-5'>
+          <div className='flex flex-col justify-center items-center'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              <input 
+                type='text'
+                value={searchValue}
+                placeholder="Enter your search..."
+                onChange={(e) => setSearchValue(e.target.value)}
+                className="border-2 p-2 mb-1 rounded-lg border-primary
+                dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"                         
+              />
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                className="border-2 p-2  mb-1 rounded-lg border-primary
+                dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"  
+              >
+                <option value='' >Search By</option>
+                <option value='category' >Category</option>
+                <option value='productName' >Product name</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className='my-5'>
+            {categories.map(cat => {
+              delay += 100;
+              return <CatProdAddQ key={cat.id} catProds={cat} 
+                      searchValue={searchValue} searchType={searchType}
+                      setMessage={setMessage} setMessageStatus={setMessageStatus}
+                      />
+            })}
           </div>
         </div>
-        
-        <div className='my-5'>
-          {prodsCategories.map(cat => {
-            delay += 100;
-            return <CatProdAddQ key={cat.id} catProds={cat} 
-                    searchValue={searchValue} searchType={searchType} 
-                    />
-          })}
-        </div>
       </div>
+      
     )
 }
