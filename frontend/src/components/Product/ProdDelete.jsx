@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import CatProdDelete from './CatProdDelete';
 import axios from 'axios';
 
@@ -7,89 +7,18 @@ const loadProdsFromDB = async () => {
     const res = await axios.get('http://localhost:8000/api/products/');
     
     if(res.status === 200) {
-      console.log(res.data);
+      return res.data.results;
     } else {
-      console.log('error');
+      console.log('Failed to fetch products');
+      return ;
     }
   } catch (error) {
-    console.log('catch');
+    console.log('Failed to fetch products');
+    return;
   }
 }
 
-loadProdsFromDB();
 
-const prods = [
-  {
-    "success": true,
-    "count": 1,
-    "results": [
-        {
-            "id": 2,
-            "name": "Organic Argan Oil",
-            "description": "Huile premium pressée à froid",
-            "category": 14,
-            "category_name": "Liquids",
-            "status": "ACTIVE",
-            "display_order": 3,
-            "items_count": 4,
-            "created_at": "2025-06-06T15:57:52.125510Z",
-            "updated_at": "2025-06-12T20:57:03.198970Z"
-        }
-    ]
-  } , {
-    "success": true,
-    "count": 1,
-    "results": [
-        {
-            "id": 3,
-            "name": "Handmade Wooden Chair",
-            "description": "Huile premium pressée à froid",
-            "category": 2,
-            "category_name": "Liquids",
-            "status": "ACTIVE",
-            "display_order": 3,
-            "items_count": 4,
-            "created_at": "2025-06-06T15:57:52.125510Z",
-            "updated_at": "2025-06-12T20:57:03.198970Z"
-        }
-    ]
-  } , {
-    "success": true,
-    "count": 1,
-    "results": [
-        {
-            "id": 4,
-            "name": "Traditional Moroccan Slippers",
-            "description": "Huile premium pressée à froid",
-            "category": 5,
-            "category_name": "Liquids",
-            "status": "ACTIVE",
-            "display_order": 3,
-            "items_count": 4,
-            "created_at": "2025-06-06T15:57:52.125510Z",
-            "updated_at": "2025-06-12T20:57:03.198970Z"
-        }
-    ]
-  } , {
-  "success": true,
-  "count": 1,
-  "results": [
-    {
-      "id": 5,
-      "name": "Silver Berber Necklace",
-      "description": "Collier traditionnel berbère en argent pur",
-      "category": 12,
-      "category_name": "Accessories & Jewelry",
-      "status": "ACTIVE",
-      "display_order": 1,
-      "items_count": 3,
-      "created_at": "2025-06-10T12:45:32.000000Z",
-      "updated_at": "2025-06-12T20:57:03.000000Z"
-    }
-  ]
-}
-
-]
 
 const prodsCategories = [
   {
@@ -163,64 +92,101 @@ const prodsCategories = [
   }
 ]
 
-const loadProdsCategorie = () => {
-  prods.forEach((element) => {
-    const product = element.results[0];
-    prodsCategories.forEach((category) => {
-      if(product.category === category.id) {
-        category.products.push(product);
-      } else if(category?.content){
-        category.content.forEach((subCategory) => {
-          if(product.category === subCategory.id){
-            subCategory.products.push(product);
-          }
-        })
-      }
-    })
-  });
-}
 
-loadProdsCategorie();
+
 
 export default function ProdDelete() {
-
   let delay = 100;
   const [searchValue, setSearchValue] = useState('');
   const [searchType, setSearchType] = useState('');
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState([]); // ✅ état local
+  const [message, setMessage] = useState("");
+  const [messageStatus, setMessageStatus] = useState(false);
+
+  const loadProdsCategorie = async () => {
+    const prods = await loadProdsFromDB();
+
+    // Copier la structure vide
+    const localCategories = prodsCategories.map(cat => ({
+      ...cat,
+      products: cat.products ? [] : undefined,
+      content: cat.content ? cat.content.map(sub => ({ ...sub, products: [] })) : undefined
+    }));
+
+    // Injecter les produits dans la bonne catégorie ou sous-catégorie
+    prods.forEach((product) => {
+      localCategories.forEach((category) => {
+        if (product.category === category.id && category.products) {
+          category.products.push(product);
+        } else if (category.content) {
+          category.content.forEach((subCategory) => {
+            if (product.category === subCategory.id) {
+              subCategory.products.push(product);
+            }
+          });
+        }
+      });
+    });
+
+    setCategories(localCategories); // ✅ mise à jour du state
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadProdsCategorie();
+  }, []);
+
+  if (isLoading) 
+    return <p className="text-center mt-10 text-primary">Loading...</p>;
+
   return (
     <div className='mt-5'>
-      <div className='flex flex-col justify-center items-center'>
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 w-1/2'>
-          <input 
-            type='text'
-            value={searchValue}
-            placeholder="Enter your search..."
-            onChange={(e) => setSearchValue(e.target.value)}
-            className="border-2 p-2 mb-1 rounded-lg border-primary
-            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"                         
-          />
-          <select
-            value={searchType}
-            onChange={(e) => setSearchType(e.target.value)}
-            className="border-2 p-2  mb-1 rounded-lg border-primary
-            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"  
-          >
-            <option value='' >Search By</option>
-            <option value='category' >Category</option>
-            <option value='productName' >Product name</option>
-          </select>
+      <p className={`${messageStatus ? 'text-primary' : 'text-blue-600'} text-center`}>{message}</p>
+      <div className='mt-5'>
+      {/* Champ de recherche */}
+        <div className='flex flex-col justify-center items-center '>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <input 
+              type='text'
+              value={searchValue}
+              placeholder="Enter your search..."
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="border-2 p-2 mb-1 rounded-lg border-primary
+              dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"                         
+            />
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="border-2 p-2  mb-1 rounded-lg border-primary
+              dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"  
+            >
+              <option value='' >Search By</option>
+              <option value='category' >Category</option>
+              <option value='productName' >Product name</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Affichage des catégories */}
+        <div className='my-5'>
+          {categories.map(cat => {
+            delay += 100;
+            return (
+              <CatProdDelete 
+                key={cat.id}
+                catProds={cat}
+                searchValue={searchValue}
+                searchType={searchType}
+                onDelete={loadProdsCategorie}
+                setMessage={setMessage}
+                setMessageStatus={setMessageStatus}
+              />
+            );
+          })}
         </div>
       </div>
-      
-      <div className='my-5'>
-        {prodsCategories.map(cat => {
-          delay += 100;
-          return <CatProdDelete key={cat.id} catProds={cat} 
-                  searchValue={searchValue} searchType={searchType} 
-                  />
-        })}
-      </div>
     </div>
+    
   )
 }

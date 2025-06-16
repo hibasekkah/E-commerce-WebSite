@@ -1,7 +1,8 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import { FiPlus } from 'react-icons/fi';
 
-export default function ProductRow({ prod, headVariants}) {
+export default function ProductRow({ prod, headVariants, setMessage, setMessageStatus}) {
     const [showVariations, setShowVariations] = useState(false);
     const variantLength = headVariants?.length + 1;
 
@@ -29,11 +30,32 @@ export default function ProductRow({ prod, headVariants}) {
     };
 
 
-    const addQuantity = (indexQuantiy, idVariation) => {
+    const addQuantity = async (indexQuantiy, idVariation) => {
         if (quantities[indexQuantiy] === '' || quantities[indexQuantiy] <= 0) {
             handleQuantityErrorChange(indexQuantiy, 'Please enter a valid quantity.');
         } else {
             handleQuantityErrorChange(indexQuantiy, '');
+            try{
+                const res = await axios.post(`http://localhost:8000/api/product-items/${idVariation}/adjust-stock/`, {
+                    "adjustment": quantities[indexQuantiy]
+                });
+                if(res.status === 200) {
+                    setMessage("Quantity successfully added.");
+                    setMessageStatus(false);
+                    handleQuantityChange(indexQuantiy, '');
+                } else {
+                    setMessage("An error occurred while updating the stock.");
+                    setMessageStatus(true);
+
+                }
+            }catch{
+                setMessage("An error occurred while updating the stock.");
+                setMessageStatus(true);
+
+            }
+            setTimeout(() => {
+                setMessage('');
+            }, 2000);
         }
     }
 
