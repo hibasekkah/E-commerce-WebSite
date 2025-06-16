@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const loadProdsFromDB = async () => {
   try{
-    const res = await axios.get('http://localhost:8000/api/products/');
+    const res = await axios.get('http://localhost:8000/api/products/?active_discount_rate=false');
     
     if(res.status === 200) {
       return res.data.results;
@@ -97,8 +97,6 @@ export default function Promotions() {
     const [searchType, setSearchType] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [categories, setCategories] = useState([]); // ✅ état local
-    const [message, setMessage] = useState("");
-    const [messageStatus, setMessageStatus] = useState(false);
   
     const loadProdsCategorie = async () => {
       const prods = await loadProdsFromDB();
