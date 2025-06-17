@@ -17,21 +17,73 @@ class ShippingMethodListView(generics.ListCreateAPIView):
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.db.models import Count
 from .models import Order
-from .serializers import OrderCreateSerializer # Assuming you have a read serializer
+from .serializers import (
+    OrderSerializer,          # Your detailed READ serializer
+    OrderListSerializer,      # Your lightweight LIST serializer
+    OrderCreateSerializer     # Your powerful WRITE serializer
+)
 
-class OrderCreateAPIView(generics.CreateAPIView):
+class OrderListCreateAPIView(generics.ListCreateAPIView):
+    """
+    Handles both listing a user's orders and creating a new one.
+    - GET: Returns a list of all orders for the currently authenticated user.
+    - POST: Creates a new order from the user's cart, with a 'PENDING' status.
+    """
     permission_classes = [IsAuthenticated]
-    queryset = Order.objects.none()
-    serializer_class = OrderCreateSerializer
 
-    def get_serializer_context(self):
-        return {'request': self.request}
+    def get_queryset(self):
+        """
+        This view should only return orders for the currently authenticated user.
+        We also annotate the queryset to efficiently count items for the list view.
+        """
+        user = self.request.user
+        return Order.objects.filter(user=user).annotate(
+            item_count_annotated=Count('lines')
+        )
+
+    def get_serializer_class(self):
+        """
+        Use the appropriate serializer depending on the request method.
+        """
+        if self.request.method == 'POST':
+            return OrderCreateSerializer
+        # For GET requests
+        return OrderListSerializer
 
     def create(self, request, *args, **kwargs):
-        write_serializer = self.get_serializer(data=request.data)
-        write_serializer.is_valid(raise_exception=True)
-        order = write_serializer.save()
-        read_serializer = OrderSerializer(order, context=self.get_serializer_context())
+        """
+        Override the default create method to add context and return
+        the detailed view of the newly created order.
+        """
+        # Pass the request context to the serializer so it can access the user
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        
+        # The .save() method on our OrderCreateSerializer will trigger all the logic
+        # (checking stock, creating snapshots, clearing the cart, etc.)
+        order = serializer.save()
+        
+        # On success, we don't want to return the simple creation data.
+        # We want to return the full, detailed order object using our read serializer.
+        read_serializer = OrderSerializer(order)
         headers = self.get_success_headers(read_serializer.data)
+        
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class OrderRetrieveAPIView(generics.RetrieveAPIView):
+    """
+    API endpoint for a user to view the full details of a single, specific order.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderSerializer # Use the detailed serializer
+
+    def get_queryset(self):
+        """
+        Ensure users can only retrieve their own orders.
+        """
+        return Order.objects.filter(user=self.request.user).prefetch_related(
+            'lines__product_item__product', 'payment__transactions'
+        )
