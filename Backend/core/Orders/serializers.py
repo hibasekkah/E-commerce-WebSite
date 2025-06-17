@@ -188,3 +188,88 @@ class OrderCreateSerializer(serializers.Serializer):
         cart.items.all().delete()
         
         return order
+    
+class OrderListSerializer(serializers.ModelSerializer):
+    """
+    A lightweight, read-only serializer for listing a user's orders efficiently.
+    """
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    item_count = serializers.IntegerField(read_only=True, source='item_count_annotated')
+
+    class Meta:
+        model = Order
+        fields = [
+            'id', 
+            'created_at', 
+            'order_total', 
+            'status', 
+            'status_display',
+            'item_count'
+        ]
+
+
+from rest_framework import serializers
+from .models import Order, OrderLine
+# We'll need serializers from other apps to show nested details
+from Products.serializers import SimpleProductItemSerializer # Assuming you have this
+from Users.serializers import AddressSerializer # Assuming you have this
+from Payments.serializers import PaymentSerializer # Assuming you have this
+
+class OrderLineSerializer(serializers.ModelSerializer):
+    """
+    Formats a single line item within an order, showing product details.
+    """
+    # Use a nested serializer to show product details instead of just an ID
+    product_item = SimpleProductItemSerializer(read_only=True)
+    line_total = serializers.ReadOnlyField()
+
+    class Meta:
+        model = OrderLine
+        fields = [
+            'id', 
+            'product_item', 
+            'product_name', # Snapshot field from the model
+            'product_sku',  # Snapshot field from the model
+            'quantity', 
+            'price',        # The final price after discounts
+            'line_total'
+        ]
+
+class OrderSerializer(serializers.ModelSerializer):
+    """
+    A detailed, read-only serializer for a single Order.
+    It includes nested information about lines, payment, and address.
+    """
+    # --- Nested Relationships ---
+    lines = OrderLineSerializer(many=True, read_only=True)
+    payment = PaymentSerializer(read_only=True)
+    
+    # --- Helper/Calculated Fields ---
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    # --- Snapshot Fields ---
+    # The shipping_address_snapshot is a JSONField, so we can represent it as such
+    shipping_address = serializers.JSONField(source='shipping_address_snapshot', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'user',
+            'status',
+            'status_display', # e.g., "Processing"
+            'created_at',
+            'updated_at',
+            'payment', # Nested payment details
+            'shipping_address', # The address snapshot
+            'shipping_method_name', # The shipping method name snapshot
+            'tracking_number',
+            # Financial Breakdown
+            'subtotal',
+            'shipping_cost',
+            'tax_amount',
+            'discount_amount',
+            'order_total',
+            # Line Items
+            'lines'
+        ]
