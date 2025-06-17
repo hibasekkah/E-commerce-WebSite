@@ -57,6 +57,9 @@ export default function Login({ onClose, onSwitchToRegister }) {
         setMessage("Login successful!");
         setMessageStatus(false);
         setTimeout(()=>{
+            if(role === 'Admin') {
+              window.location.href = '/';
+            }
             onClose();
             setMessage("");
         }, 2500)

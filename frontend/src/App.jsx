@@ -31,6 +31,7 @@ import AddQuantityProdPage from "./components/Product/AddQuantityProdPage";
 import Promotions from "./components/Promotions/Promotions";
 import PromotionAdd from "./components/Promotions/PromotionAdd";
 import CategoryPage from "./components/Category/CategoryPage";
+import ProductDetails from "./components/Product/ProductDetails";
 
 
 const Products = [
@@ -143,9 +144,12 @@ function App() {
             <Route path="/Promotions/Add" element = {
               <PromotionAdd />
             }/>
-            <Router path="/Category/:CategoryName" element = {
+            <Route path="/Category/:categoryName" element = {
               <CategoryPage />
             }/>
+            <Route path="/Product/:id" element = {
+              <ProductDetails />
+            } />
           </Routes>
         <Footer />
       </Router>

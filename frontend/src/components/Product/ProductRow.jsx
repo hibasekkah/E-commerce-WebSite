@@ -64,6 +64,7 @@ export default function ProductRow({ prod, headVariants, setMessage, setMessageS
     2: 'sm:grid-cols-2',
     3: 'sm:grid-cols-3',
     4: 'sm:grid-cols-4',
+    5: 'sm:grid-cols-5'
     };
 
     return (

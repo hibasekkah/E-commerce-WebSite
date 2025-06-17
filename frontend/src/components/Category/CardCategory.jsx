@@ -1,7 +1,7 @@
 import React from 'react'
 import BrowseButton from '../Button/BrowseButton'
 
-export default function CardCategory({line1, line2, line3, ImageCategory, delay}) {
+export default function CardCategory({line1, line2, line3, ImageCategory, delay, category_name}) {
   return (
     <div data-aos="zoom-in-up" data-aos-delay={delay} className='py-10 pl-5 bg-gradient-to-br from-primary/40 to-secondary/90 rounded-3xl relative h-[320px] w-[280px] flex items-start shadow-xl'>
       <div>
@@ -9,7 +9,7 @@ export default function CardCategory({line1, line2, line3, ImageCategory, delay}
           <p className='mb-[2px]'>{line1}</p>
           <p className='text-xl font-semibold mb-[1px]'>{line2}</p>
           <p className='text-xl xl:text-2xl mb-10 font-semibold'>{line3}</p>
-          <BrowseButton/>
+          <BrowseButton category_name={category_name}/>
         </div>
       </div>
       <img src={ImageCategory} alt="" className='h-[200px] absolute bottom-0 right-0' />
