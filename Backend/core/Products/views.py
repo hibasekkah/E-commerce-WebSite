@@ -165,13 +165,36 @@ class ProductDetailView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self, pk):
+        """
+        This is the new, enhanced get_object method. It fetches the product
+        and annotates it with the discount rate in a single, efficient query.
+        """
+        now = timezone.now()
+        
+        # 1. Define the same subquery used in the list view.
+        active_promotion_subquery = Promotion.objects.filter(
+            product=OuterRef('pk'),
+            start_date__lte=now,
+            end_date__gte=now
+        ).order_by('-discount_rate') # Use the correct field name
+
+        # 2. Build the queryset for a single product and apply the annotation.
+        queryset = Product.objects.filter(
+            pk=pk, 
+            deleted_at__isnull=True
+        ).annotate(
+            active_discount_rate=Subquery(active_promotion_subquery.values('discount_rate')[:1])
+        )
+
+        # 3. Try to get the single object from this annotated queryset.
         try:
-            return Product.objects.get(pk=pk, deleted_at__isnull=True)
+            return queryset.get()
         except Product.DoesNotExist:
             return None
 
     def get(self, request, pk):
         product = self.get_object(pk)
+
         if not product:
             return Response(
                 {'error': 'Product not found or has been deleted'},

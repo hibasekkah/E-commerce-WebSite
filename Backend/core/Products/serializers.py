@@ -531,13 +531,15 @@ class ProductListSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for product retrieval with full image support"""
     items = ProductItemSerializer(source='productitem_set', many=True, read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    active_discount_rate = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
     
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'category',
-            'status', 'display_order',
-            'items', 'created_at', 'updated_at'
+            'id', 'name', 'description', 'category', 'category_name',
+            'status', 'display_order','active_discount_rate', 'items',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
