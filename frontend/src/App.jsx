@@ -147,7 +147,7 @@ function App() {
             <Route path="/Category/:categoryName" element = {
               <CategoryPage />
             }/>
-            <Route path="/Product/:id" element = {
+            <Route path="/Product/:categoryName/:id" element = {
               <ProductDetails />
             } />
           </Routes>
