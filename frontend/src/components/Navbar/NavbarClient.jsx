@@ -7,15 +7,13 @@ import DarkMode from './DarkMode';
 import { CgProfile } from "react-icons/cg";
 
 const categories = [
-  { id: 1, name: 'Leather Craft', link: '/#' },
-  { id: 2, name: 'Textiles & Carpets', link: '/#' },
-  { id: 3, name: 'Ceramics & Pottery', link: '/#' },
-  { id: 4, name: 'Jewelry & Accessories', link: '/#' },
-  { id: 5, name: 'Woodwork', link: '/#' },
-  { id: 6, name: 'Metal Products', link: '/#' },
-  { id: 7, name: 'Natural Cosmetics', link: '/#' },
-  { id: 8, name: 'Spices & Food Products', link: '/#' },
+  { id: 1, name: 'Home Decor', link: '/Category/Home%20Decor' },
+  { id: 2, name: 'Clothing & Textiles', link: '/Category/Clothing%20%26%20Textiles' },
+  { id: 3, name: 'Natural Cosmetics', link: '/Category/Natural%20Cosmetics' },
+  { id: 4, name: 'Accessories & Jewelry', link: '/Category/Accessories%20%26%20Jewelry' },
+  { id: 5, name: 'Food & Spices', link: '/Category/Food%20%26%20Spices' }
 ];
+
 
 const Menu = [
   { id: 1, name: 'Home', link: '/' },
@@ -54,6 +52,8 @@ export default function NavbarClient({username}) {
   const modalRegisterRef = useRef();
 
   const role = localStorage.getItem('role') || '';
+  const currentPath = window.location.pathname;
+  const isCategoryActive = categories.some(cat => cat.link === currentPath);
 
   const handleClickOutside = (event) => {
     if (modalLoginRef.current && !modalLoginRef.current.contains(event.target)) {
@@ -85,7 +85,7 @@ export default function NavbarClient({username}) {
         <div className='container flex justify-between items-center'>
           {/* Logo */}
           <div>
-            <a href='#' className='font-bold text-2xl sm:text-3xl flex gap-3 items-center'>
+            <a href='/' className='font-bold text-2xl sm:text-3xl flex gap-3 items-center'>
               <img src={Logo} alt='Logo' className='w-10 block dark:hidden' />
               MorocAntik
             </a>
@@ -93,15 +93,6 @@ export default function NavbarClient({username}) {
 
           {/* Right Side */}
           <div className='flex items-center gap-4'>
-            {/* Search bar (hidden on small screens) */}
-            <div className='relative group hidden sm:block'>
-              <input
-                type="text"
-                placeholder='search'
-                className='w-[200px] group-hover:w-[300px] transition-all duration-300 rounded-full border border-gray-300 px-2 py-1 focus:outline-none focus:border-primary dark:bg-gray-800 dark:text-white dark:border-gray-600'
-              />
-              <IoMdSearch className='text-gray-500 group-hover:text-primary absolute top-1/2 -translate-y-1/2 right-3' />
-            </div>
             {/* Account */}
             <div className='relative'>
               <div className='group relative cursor-pointer hidden sm:block'>
@@ -129,16 +120,6 @@ export default function NavbarClient({username}) {
               </div>
 
             </div>
-            
-            {/* Order button */}
-            <button
-              onClick={() => alert('Ordering not available yet')}
-              className='bg-gradient-to-r from-primary to-secondary transition-all duration-200 text-white py-1 px-4 rounded-full flex items-center gap-3 group'
-            >
-              <span className='group-hover:block hidden transition-all duration-200'>Order</span>
-              <FaCartShopping className='text-xl text-white drop-shadow-sm cursor-pointer' />
-            </button>
-
             {/* Dark mode switch */}
             <div className="ml-4">
               <DarkMode />
@@ -160,14 +141,19 @@ export default function NavbarClient({username}) {
         <ul className='flex items-center gap-4'>
           {Menu.map((data) => (
             <li key={data.id}>
-              <a href={data.link} className='inline-block px-4 hover:text-primary duration-200'>
-                {data.name}
-              </a>
+               <button
+                  onClick={() =>  window.location.href = data.link}
+                  className={`flex items-center p-4 gap-3 cursor-pointer duration-200 ${
+                  currentPath === data.link ? 'text-primary font-semibold' : 'hover:text-primary' }`}
+                >
+                  {data.name}
+                </button>
             </li>
           ))}
           {/* Categories Dropdown */}
           <li className='group relative cursor-pointer'>
-            <a href="#" className='flex items-center gap-[2px] py-2'>
+            <a href="#" className={`flex items-center gap-[2px] py-2
+                                   ${isCategoryActive ? 'text-primary font-semibold' : 'hover:text-primary'}`}>
               Categories
               <FaCaretDown className='transition-all duration-200 group-hover:rotate-180' />
             </a>
@@ -175,9 +161,13 @@ export default function NavbarClient({username}) {
               <ul className='shadow-md bg-white dark:bg-gray-900 dark:text-white duration-200 relative z-40'>
                 {categories.map((data) => (
                   <li key={data.id}>
-                    <a href={data.link} className='inline-block w-full rounded-md p-2 hover:bg-primary/20'>
+                    <button
+                      onClick={() => (window.location.href = data.link)}
+                      className={`inline-block w-full rounded-md p-2 hover:bg-primary/20 text-left ${
+                      currentPath === data.link ? 'text-primary font-semibold' : 'hover:text-primary' }`}
+                    >
                       {data.name}
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>

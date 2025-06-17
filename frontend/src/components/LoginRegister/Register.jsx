@@ -92,6 +92,7 @@ export default function Register({ onClose, onSwitchToLogin }) {
 
       if (res.status === 201 || res.status === 200) { //200 OK, 201 created
         setMessage(" Account created successfully! Redirecting...");
+        setMessageStatus(false);
         setTimeout(async () => {
           const payload = {
             email,

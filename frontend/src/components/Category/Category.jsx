@@ -16,42 +16,40 @@ export default function Category() {
       line2: 'Your Look',
       line3: 'With Timeless Style',
       ImageCategory:Category1,
-      delay: 100
+      delay: 100, 
+      category_name: 'Clothing & Textiles'
     }, {
-      id: 2,
-      line1: 'Cook Better',
-      line2: 'With',
-      line3: 'Artisan Kitchenware',
-      ImageCategory:Category2,
-      delay: 200
-    }, {
-      id:3, 
+      id:2, 
       line1: 'Transform',
       line2: 'Your Space',
       line3: 'With Elegant Decor',
       ImageCategory:Category3,
-      delay: 300
+      delay: 200, 
+      category_name:'Home Decor'
     }, {
-      id:4,
+      id:3,
       line1: 'Shine Bright',
       line2: 'With',
       line3: 'Jewelry & Accessories',
       ImageCategory:Category4,
-      delay: 400
+      delay: 300,
+      category_name: 'Accessories & Jewelry'
     }, {
-      id:5,
+      id:4,
       line1: 'Glow Naturally',
       line2: 'With',
       line3: 'Natural Cosmetics',
       ImageCategory:Category7,
-      delay: 500
+      delay: 400, 
+      category_name:'Natural Cosmetics'
     }, {
-      id:6,
+      id:5,
       line1: 'Spice Up',
       line2: 'Your Taste',
       line3: 'Spices & Food',
       ImageCategory:Category8, 
-      delay: 600
+      delay: 500, 
+      category_name: 'Food & Spices'
     }
   ]
 
@@ -69,7 +67,8 @@ export default function Category() {
         <div className='container flex justify-center items-center'>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-20'>
             {CategoryInfo.map((Category) => (
-              <CardCategory key={Category.id} line1={Category.line1} line2={Category.line2} line3={Category.line3} ImageCategory={Category.ImageCategory} delay={Category.delay}/>
+              <CardCategory key={Category.id} line1={Category.line1} line2={Category.line2} line3={Category.line3} 
+                            ImageCategory={Category.ImageCategory} delay={Category.delay} category_name={Category.category_name}/>
             ))}
           </div>
         </div>
