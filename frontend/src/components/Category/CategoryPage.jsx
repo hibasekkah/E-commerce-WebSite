@@ -94,7 +94,7 @@ export default function CategoryPage({}) {
                             const prevPrice = product.items[0].price_after_promotion < product.items[0].price ? product.items[0].price : null;
                             delay += 50;
                             return (
-                                <div data-aos="zoom-in-up" data-aos-delay={delay}>
+                                <div data-aos="zoom-in-up" data-aos-delay={delay} key={product.id}>
                                     <ProductCard 
                                         key={product.id} 
                                         image={image} 
@@ -103,6 +103,7 @@ export default function CategoryPage({}) {
                                         id = {product.id}
                                         prevPrice={prevPrice} 
                                         discount={product.active_discount_rate} 
+                                        categoryName={categoryName}
                                     />
                                 </div>
                             )

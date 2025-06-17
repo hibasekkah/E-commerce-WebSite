@@ -1,11 +1,11 @@
 import React from 'react'
 
 
-export default function ProductCard ({image, name, id, price,prevPrice, discount}) {
+export default function ProductCard ({image, name, id, price,prevPrice, discount, categoryName}) {
 
 
   return (
-        <div    onClick={() => window.location.href = `/Product/${id}`}
+        <div    onClick={() => window.location.href = `/Product/${categoryName}/${id}`}
                 className='text-white w-[300px] h-[450px] grid grid-rows-[320px_60px_20px] grid-cols-1 bg-gradient-to-br
                 from-primary/40 to-secondary/70 rounded-xl p-5 m-6 cursor-pointer 
                 transition-transform transform hover:scale-105'
