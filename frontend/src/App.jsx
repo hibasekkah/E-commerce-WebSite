@@ -33,6 +33,8 @@ import PromotionAdd from "./components/Promotions/PromotionAdd";
 import CategoryPage from "./components/Category/CategoryPage";
 import ProductDetails from "./components/Product/ProductDetails";
 import CartPage from "./components/Cart/CartPage";
+import MakeOrder from "./components/Order/MakeOrder";
+import Payment from "./components/Payment/Payment";
 
 
 const Products = [
@@ -153,6 +155,12 @@ function App() {
             } />
             <Route path="/Cart" element = {
               <CartPage />
+            } />
+            <Route path="/Order" element = {
+              <MakeOrder />
+            } />
+            <Route path="/Order/Payment" element = {
+              <Payment />
             } />
           </Routes>
         <Footer />

@@ -125,6 +125,7 @@ export default function CartPage() {
                   py-2 px-2 cursor-pointer transform transition-transform duration-200
                   hover:from-blue-900 hover:to-blue-900 text-xl
                   dark:from-blue-500 dark:to-blue-700 dark:hover:from-blue-500 dark:hover:to-blue-500`}
+      onClick={() => window.location.href = '/Order'}
       >
       Proceed to Checkout
       </button>
