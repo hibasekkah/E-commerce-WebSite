@@ -144,79 +144,58 @@ class PasswordUpdateSerializer(serializers.Serializer):
     
 from rest_framework import serializers
 from .models import UserShippingAddress
-from .countries import COUNTRY_NAME_TO_CODE_MAP # Import our lookup dictionary
+from .countries import COUNTRY_NAME_TO_CODE_MAP, COUNTRY_CODE_TO_NAME_MAP # Import our maps
 
 class CountryNameField(serializers.Field):
     """
     A custom serializer field to handle country name <-> code translation.
-    - On input (from frontend), it accepts a full name like "Morocco" and
-      converts it to the 2-letter code "MA" for the database.
-    - On output (to frontend), it takes the code "MA" from the database and
-      represents it as the full name "Morocco".
+    - On WRITE (from frontend): accepts a full name ("Morocco") and converts it to a code ("MA").
+    - On READ (to frontend): takes a code ("MA") and represents it as the full name ("Morocco").
     """
-    def to_representation(self, value):
+    def to_representation(self, code):
         """
-        Converts the database code (e.g., country object with code 'MA')
-        to the full name string ("Morocco") for the API response.
+        Converts the database code ("MA") to the full name ("Morocco") for API responses.
         """
-        # 'value' here is the Country object provided by CountryField.
-        # We just need its full name.
-        return value.name
+        return COUNTRY_CODE_TO_NAME_MAP.get(code, code) # Return the code itself if name not found
 
     def to_internal_value(self, data):
         """
-        Converts the incoming full name string ("Morocco") to the database
-        code ("MA"). This is where validation happens.
+        Converts the incoming full name ("Morocco") to the database code ("MA").
+        This is where validation happens.
         """
-        # Make the lookup case-insensitive and remove whitespace
+        # Make the lookup case-insensitive and remove whitespace for robustness
         lookup_name = str(data).lower().strip()
         
         # Look up the code in our mapping dictionary
         code = COUNTRY_NAME_TO_CODE_MAP.get(lookup_name)
         
         if code:
-            # Return the valid 2-letter code
+            # If found, return the valid 2-letter code
             return code
         else:
-            # If the name is not found, raise a validation error.
+            # If the name is not found, raise a clear validation error
             raise serializers.ValidationError(f"'{data}' is not a valid or supported country name.")
 
 
-class AddressSerializer(serializers.ModelSerializer):
+# This is the serializer used inside your OrderCreateSerializer
+class AddressCreateSerializer(serializers.ModelSerializer):
     """
-    The main serializer for the Address model.
+    Serializer for creating a new address.
     It now uses our custom CountryNameField for translation.
     """
-    # --- THIS IS THE CHANGE ---
+    # --- THIS IS THE KEY CHANGE ---
     # We replace the default 'country' field with our new custom field.
-    # The `source` argument is important. It tells the custom field to get its
-    # initial data from the 'country' attribute of the model instance.
-    country = CountryNameField(source='*')
-    # --- END OF CHANGE ---
+    country = CountryNameField()
 
     class Meta:
         model = UserShippingAddress
         fields = [
-            'id', 
             'address', 
             'city', 
             'state', 
             'postal_code', 
             'country' # This field is now our smart translator
         ]
-    
-    # We add a 'country' field to the create method to handle our custom field
-    def create(self, validated_data):
-        # The 'country' key in validated_data now holds the 2-letter code.
-        # We can directly pass it to the model's create method.
-        return UserShippingAddress.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        # The same applies for updates.
-        instance.country = validated_data.get('country', instance.country)
-        # ... update other fields ...
-        instance.save()
-        return instance
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

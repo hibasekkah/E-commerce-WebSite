@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import ShippingMethod
+from Users.serializers import AddressCreateSerializer # Assuming you have this
 
 
 class ShippingMethodSerializer(serializers.ModelSerializer):
@@ -35,12 +36,12 @@ from Users.models import UserShippingAddress, User # Assuming Address is in a 'u
 from Carts.models import ShoppingCart
 from Products.models import ProductItem
 
-# We need a simple serializer for the nested address data
-class AddressCreateSerializer(serializers.ModelSerializer):
-    """A helper serializer to validate the address fields."""
-    class Meta:
-        model = UserShippingAddress
-        fields = ['address', 'city', 'state', 'postal_code', 'country']
+# # We need a simple serializer for the nested address data
+# class AddressCreateSerializer(serializers.ModelSerializer):
+#     """A helper serializer to validate the address fields."""
+#     class Meta:
+#         model = UserShippingAddress
+#         fields = ['address', 'city', 'state', 'postal_code', 'country']
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -101,7 +102,7 @@ class OrderCreateSerializer(serializers.Serializer):
             # We use update_or_create to avoid creating duplicate addresses for the user.
             address, created = UserShippingAddress.objects.update_or_create(
                 user=user,
-                street_address=address_data['street_address'],
+                address=address_data['address'],
                 city=address_data['city'],
                 state=address_data['state'],
                 postal_code=address_data['postal_code'],
@@ -113,7 +114,7 @@ class OrderCreateSerializer(serializers.Serializer):
             # Use the existing address
             address = UserShippingAddress.objects.get(id=validated_data['shipping_address_id'], user=user)
             address_snapshot = {
-                "street_address": address.street_address,
+                "address": address.street_address,
                 "city": address.city,
                 "state": address.state,
                 "postal_code": address.postal_code,
@@ -149,16 +150,16 @@ class OrderCreateSerializer(serializers.Serializer):
             
             # ### NEW: Promotion Logic ###
             # Find the best active promotion for this product's parent.
-            active_promos = product_item.product.promotion_links.filter(
-                promotion__is_active=True,
-                promotion__start_date__lte=timezone.now(),
-                promotion__end_date__gte=timezone.now()
+            active_promos = product_item.product.promotions.filter(
+                is_active=True,
+                start_date__lte=timezone.now(),
+                end_date__gte=timezone.now()
             )
             
             if active_promos.exists():
                 # Find the promotion with the highest discount percentage
-                best_promo = max(active_promos, key=lambda p: p.promotion.discount_percentage)
-                discount_rate = best_promo.promotion.discount_percentage / Decimal('100.0')
+                best_promo = max(active_promos, key=lambda p: p.discount_rate)
+                discount_rate = best_promo.discount_rate / Decimal('100.0')
                 discount_for_this_item = base_price * discount_rate
                 final_price = base_price - discount_for_this_item
                 total_discount += discount_for_this_item * item.quantity
@@ -212,7 +213,7 @@ from rest_framework import serializers
 from .models import Order, OrderLine
 # We'll need serializers from other apps to show nested details
 from Products.serializers import SimpleProductItemSerializer # Assuming you have this
-from Users.serializers import AddressSerializer # Assuming you have this
+from Users.serializers import AddressCreateSerializer # Assuming you have this
 from Payments.serializers import PaymentSerializer # Assuming you have this
 
 class OrderLineSerializer(serializers.ModelSerializer):

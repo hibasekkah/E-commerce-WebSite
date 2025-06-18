@@ -119,7 +119,7 @@ class OrderLine(models.Model):
     )
     
     # --- CRITICAL: Product details are stored as a snapshot ---
-    product_sku = models.CharField(max_length=100, blank=True, db_index=True)
+    product_sku = models.CharField(max_length=100, blank=True, db_index=True,null=True)
     product_name = models.CharField(max_length=255)
     
     # --- CRITICAL: Financial details are stored as a snapshot ---
