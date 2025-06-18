@@ -18,21 +18,25 @@ class CartView(RetrieveDestroyAPIView):
     - GET: Retrieve the full details of the user's cart.
     - DELETE: Clear all items from the user's cart.
     """
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = ShoppingCartSerializer
 
     def get_object(self):
         """
-        Get or create a shopping cart for the current user.
-        This ensures every user has a cart ready to use.
+        Gets or creates the user's cart and, most importantly, pre-fetches
+        all related data needed by the model properties to calculate prices efficiently.
         """
         cart, created = ShoppingCart.objects.get_or_create(user=self.request.user)
-        return cart
+
+        # THIS IS THE ESSENTIAL QUERY THAT MAKES THE MODEL PROPERTIES FAST.
+        # It must be here.
+        return ShoppingCart.objects.prefetch_related(
+            # This follows the path: Cart -> CartItem -> ProductItem -> Product -> PromotionLink -> Promotion
+            'items__product_item__product__promotions'
+        ).get(user=self.request.user)
 
     def perform_destroy(self, instance):
-        """
-        Instead of deleting the cart itself, just clear its items.
-        """
+        """Instead of deleting the cart itself, just clear its items."""
         instance.items.all().delete()
 
 
@@ -46,7 +50,7 @@ class CartItemViewSet(mixins.CreateModelMixin,
     - PATCH: Update an item's quantity.
     - DELETE: Remove an item from the cart.
     """
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """

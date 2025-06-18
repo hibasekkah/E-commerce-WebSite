@@ -40,7 +40,7 @@ class AddressCreateSerializer(serializers.ModelSerializer):
     """A helper serializer to validate the address fields."""
     class Meta:
         model = UserShippingAddress
-        fields = ['street_address', 'city', 'state', 'postal_code', 'country']
+        fields = ['address', 'city', 'state', 'postal_code', 'country']
 
 
 class OrderCreateSerializer(serializers.Serializer):

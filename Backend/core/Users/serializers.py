@@ -144,11 +144,31 @@ class PasswordUpdateSerializer(serializers.Serializer):
     
 from rest_framework import serializers
 from .models import UserShippingAddress
+from rest_framework import serializers
+from .models import UserShippingAddress # Import the correct model name
 
 class AddressSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the UserShippingAddress model that correctly
+    references the 'address' field.
+    """
+    # Using source='country.name' will display the full country name
+    # (e.g., "Morocco") in GET requests, which is more user-friendly.
+    # This is an optional but recommended improvement.
+    country_name = serializers.CharField(source='country.name', read_only=True)
+
     class Meta:
         model = UserShippingAddress
-        fields = ['id', 'street_address', 'city', 'state', 'postal_code', 'country']
+        
+        fields = [
+            'id', 
+            'address', 
+            'city', 
+            'state', 
+            'postal_code', 
+            'country', 
+            'country_name' 
+        ]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
