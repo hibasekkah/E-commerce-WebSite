@@ -267,7 +267,6 @@ class OrderSerializer(serializers.ModelSerializer):
             # Financial Breakdown
             'subtotal',
             'shipping_cost',
-            'tax_amount',
             'discount_amount',
             'order_total',
             # Line Items
