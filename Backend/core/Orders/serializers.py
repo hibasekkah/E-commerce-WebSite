@@ -13,8 +13,6 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
 
 # Add these imports
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
-from .models import ShippingMethod
 from .serializers import ShippingMethodSerializer
 
 # ... your other views (OrderListCreateAPIView, etc.)
@@ -28,10 +26,9 @@ class ShippingMethodListView(generics.ListAPIView):
     serializer_class = ShippingMethodSerializer
 
 from django.db import transaction
-from rest_framework import serializers
 from decimal import Decimal
 from django.utils import timezone
-from .models import Order, OrderLine, ShippingMethod, OrderStatus
+from .models import Order, OrderLine, OrderStatus
 from Users.models import UserShippingAddress, User # Assuming Address is in a 'users' app
 from Carts.models import ShoppingCart
 
