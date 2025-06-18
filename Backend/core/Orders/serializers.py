@@ -133,7 +133,9 @@ class OrderCreateSerializer(serializers.Serializer):
         return data
 
     @transaction.atomic
+    
     def create(self, validated_data):
+        
         user = self.context['request'].user
         
         # 1. Get the user's shopping cart items (no change here, this is perfect)
@@ -183,6 +185,9 @@ class OrderCreateSerializer(serializers.Serializer):
             shipping_address_snapshot=address_snapshot,
             shipping_method_name=shipping_method.name,
             shipping_cost=shipping_method.price,
+            subtotal=Decimal('0.00'),
+            discount_amount=Decimal('0.00'),
+            order_total=Decimal('0.00')
         )
 
         # 4. Create OrderLine items with promotion logic
@@ -221,7 +226,7 @@ class OrderCreateSerializer(serializers.Serializer):
             order_lines_to_create.append(
                 OrderLine(
                     order=order,
-                    product_item=product_item,
+                    product_item=item.product_item,
                     quantity=item.quantity,
                     price=final_price, # <-- Use the final price after discount
                     product_name=product_item.product.name,
@@ -237,8 +242,10 @@ class OrderCreateSerializer(serializers.Serializer):
 
         # 5. Finalize order totals, now including the discount
         order.discount_amount = total_discount
-        order.recalculate_totals() # This will now correctly factor in the discount
-
+        order.save(update_fields=['discount_amount']) # Save the discount first
+        
+        # Now, call the recalculate method which will set and save the final totals.
+        order.recalculate_totals() 
         # 6. Clear the cart (no change)
         cart.items.all().delete()
         
