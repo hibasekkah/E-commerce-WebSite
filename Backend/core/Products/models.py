@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from Users.models import User
@@ -193,6 +194,7 @@ class ProductItem(models.Model):
             models.Index(fields=['status', 'deleted_at']),
             models.Index(fields=['product', 'display_order']),
         ]
+
 
 
 class ProductConfiguration(models.Model):
