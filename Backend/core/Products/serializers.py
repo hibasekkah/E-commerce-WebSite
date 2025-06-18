@@ -925,16 +925,12 @@ class SimpleProductItemSerializer(serializers.ModelSerializer):
     A lightweight, read-only serializer for displaying basic ProductItem
     information within other nested serializers (like an order line).
     """
-    # To make it more useful, we can pull the product's name from the parent Product.
     name = serializers.CharField(source='product.name', read_only=True)
-    
-    # You could also add the primary image URL here if you have it.
-    # primary_image_url = serializers.CharField(source='images.first.image.url', read_only=True) # Example
 
     class Meta:
         model = ProductItem
         fields = [
-            'id',
-            'name', # The parent product's name
-            'sku'
+            'id','name', 'status'
         ]
+    
+    

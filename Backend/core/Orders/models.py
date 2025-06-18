@@ -89,16 +89,28 @@ class Order(models.Model):
     def recalculate_totals(self):
         """
         Recalculates and saves order totals from its line items.
-        Should be called whenever an order is created or its lines change.
+        This version ensures all calculations are done using the Decimal type
+        for maximum accuracy, preventing floating-point errors.
         """
-        calculated_subtotal = self.lines.aggregate(
+        # 1. Get the sum of all line totals from the database.
+        #    The result of an aggregation can be a float or None.
+        aggregation_result = self.lines.aggregate(
             total=models.Sum(models.F('quantity') * models.F('price'))
-        )['total'] or Decimal('0.00')
+        )['total']
+
+        # 2. Explicitly cast the result to a Decimal.
+        #    If the cart is empty, aggregation_result will be None, so we default to '0.00'.
+        calculated_subtotal = Decimal(aggregation_result or '0.00')
 
         self.subtotal = calculated_subtotal
-        self.order_total = self.subtotal + self.shipping_cost + self.tax_amount - self.discount_amount
         
+        # 3. Perform the final calculation, ensuring all components are Decimals.
+        #    This formula is correct for your requirement of not including tax.
+        self.order_total = self.subtotal + Decimal(self.shipping_cost) - Decimal(self.discount_amount)
+        
+        # 4. Save the updated, accurate totals to the database.
         self.save(update_fields=['subtotal', 'order_total'])
+        
         return self
 
 
