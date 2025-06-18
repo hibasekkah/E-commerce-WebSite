@@ -202,3 +202,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 #     'JWT_AUTH_COOKIE_PARTITIONED': True,  # Nouvel attribut requis pour Chrome
 #     'JWT_AUTH_COOKIE_HTTPONLY': True,  # Protection contre XSS
 # } # ⚠️ Nécessite HTTPS
+
+
+# settings.py
+PAYPAL_MODE = "sandbox"  # or "live" for production
+PAYPAL_CLIENT_ID = "Your_PayPal_Client_Id"
+PAYPAL_CLIENT_SECRET = "Your_PayPal_Client_Secret"
