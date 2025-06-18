@@ -29,7 +29,7 @@ class UserShippingAddress(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE,related_name='user_shipping_address')
     address=models.TextField()
     city=models.CharField(max_length=50)
-    state=models.CharField(max_length=50)
+    state=models.CharField(max_length=50,blank=True, null=True,)
     postal_code=models.CharField(max_length=10)
     country = CountryField(blank=True, null=True, default='MA')    
     created_at=models.DateTimeField(auto_now_add=True)
