@@ -81,7 +81,6 @@ export default function NavbarGuest() {
                   <CgProfile />
                 </div>
                 <p>Login / Register</p>
-                {/* <p>{role !== '' ? role : 'Login / Register'}</p> */}
               </div>
               {showLogin && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -112,14 +111,6 @@ export default function NavbarGuest() {
               )}
 
             </div>
-            {/* Order button */}
-            <button
-              onClick={() => alert('Ordering not available yet')}
-              className='bg-gradient-to-r from-primary to-secondary transition-all duration-200 text-white py-1 px-4 rounded-full flex items-center gap-3 group'
-            >
-              <span className='group-hover:block hidden transition-all duration-200'>Cart</span>
-              <FaCartShopping className='text-xl text-white drop-shadow-sm cursor-pointer' />
-            </button>
            
             {/* Dark mode switch */}
             <div className="ml-4">

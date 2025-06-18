@@ -133,7 +133,7 @@ export default function ProductDetails() {
     if (isLoading) return <div>Loading...</div>;
 
     return (
-        <div className='flex justify-center mt-5'>
+        <div className='flex justify-center mt-5 dark:text-white'>
             <div className='my-3 grid grid-cols-1 sm:grid-cols-2 gap-20 w-3/4'>
                 {product?.items?.[index]?.images?.[0]?.image_url ? (
                 <img
@@ -144,11 +144,11 @@ export default function ProductDetails() {
                 ) : (
                 <p>No image available.</p>
                 )}
-                <div className=''>
+                <div>
                     <a className='text-gray-500 hover:text-primary hover:underline font-semibold' 
                         href={`/Category/${categoryName}`}>See more products for this category</a>
                     <p className='mt-3 text-2xl font-semibold text-primary'>{product?.name ? product.name : null }</p>
-                    <p className='mt-2 text-lg text-gray-800 border-b-2 border-gray-500 pb-3'>{product?.description ? product.description : null}</p>
+                    <p className='mt-2 text-lg text-gray-600 border-b-2 border-gray-500 pb-3'>{product?.description ? product.description : null}</p>
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-5 mt-3 px-5 mb-11'>
                         <div className='flex items-center'>
                             <p className='text-2xl font-semibold mr-3'>
