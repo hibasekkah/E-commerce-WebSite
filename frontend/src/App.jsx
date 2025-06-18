@@ -32,6 +32,7 @@ import Promotions from "./components/Promotions/Promotions";
 import PromotionAdd from "./components/Promotions/PromotionAdd";
 import CategoryPage from "./components/Category/CategoryPage";
 import ProductDetails from "./components/Product/ProductDetails";
+import CartPage from "./components/Cart/CartPage";
 
 
 const Products = [
@@ -149,6 +150,9 @@ function App() {
             }/>
             <Route path="/Product/:categoryName/:id" element = {
               <ProductDetails />
+            } />
+            <Route path="/Cart" element = {
+              <CartPage />
             } />
           </Routes>
         <Footer />

@@ -120,9 +120,9 @@ export default function NavbarClient({username}) {
               </div>
 
             </div>
-            {/* Order button */}
+            {/* Cart button */}
             <button
-              onClick={() => alert('Ordering not available yet')}
+              onClick={() => window.location.href = '/Cart'}
               className='bg-gradient-to-r from-primary to-secondary transition-all duration-200 text-white py-1 px-4 rounded-full flex items-center gap-3 group'
             >
               <span className='group-hover:block hidden transition-all duration-200'>Cart</span>
