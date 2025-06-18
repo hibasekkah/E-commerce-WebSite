@@ -14,6 +14,7 @@ class SimpleProductItemSerializer(serializers.ModelSerializer):
     """
     # You can add more fields here like a primary image URL if needed
     name = serializers.CharField(source='product.name', read_only=True)
+    product_id = serializers.CharField(source='product.id', read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     variations = serializers.SerializerMethodField()
     price_after_promotion = serializers.SerializerMethodField()
@@ -21,7 +22,7 @@ class SimpleProductItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductItem
         fields = [
-            'id','name', 'price', 'price_after_promotion' , 'stock_quantity', 
+            'id','product_id','name', 'price', 'price_after_promotion' , 'stock_quantity', 
             'display_order', 'status', 'images', 'variations'
         ]
     
