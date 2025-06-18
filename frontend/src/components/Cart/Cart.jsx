@@ -84,7 +84,7 @@ export default function Cart({image, name, productId, category,  headVariantions
         <div className='sm:w-1/2 w-2/3 border-primary border-2 rounded-lg p-10 mb-5'>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-10'>
                 <img src={image}
-                    className='border-primary border-2' 
+                    className='border-primary border-2 w-full' 
                     alt='product'   
                 /> 
                 <div>
