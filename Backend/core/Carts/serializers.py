@@ -18,11 +18,13 @@ class SimpleProductItemSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     variations = serializers.SerializerMethodField()
     price_after_promotion = serializers.SerializerMethodField()
+    category_id = serializers.CharField(source='product.category.id', read_only=True)
+
     
     class Meta:
         model = ProductItem
         fields = [
-            'id','product_id','name', 'price', 'price_after_promotion' , 'stock_quantity', 
+            'id','product_id','category_id','name', 'price', 'price_after_promotion' , 'stock_quantity', 
             'display_order', 'status', 'images', 'variations'
         ]
     
