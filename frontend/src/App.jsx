@@ -36,6 +36,7 @@ import MakeOrder from "./components/Order/MakeOrder";
 import Payment from "./components/Payment/Payment";
 import OrderHistoryPage from "./components/Order/OrderHistoryPage";
 import OrderHistoryAdmin from "./components/Order/OrderHistoryAdmin";
+import PaymentPage from "./components/Payment/PaymentPage";
 
 
 function App() {
@@ -145,7 +146,7 @@ function App() {
               <MakeOrder />
             } />
             <Route path="/Order/Payment" element = {
-              <Payment />
+              <PaymentPage />
             } />
             <Route path="/OrderHistory" element = {
               <OrderHistoryPage />
