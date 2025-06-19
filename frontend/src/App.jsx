@@ -35,6 +35,7 @@ import CartPage from "./components/Cart/CartPage";
 import MakeOrder from "./components/Order/MakeOrder";
 import Payment from "./components/Payment/Payment";
 import OrderHistoryPage from "./components/Order/OrderHistoryPage";
+import OrderHistoryAdmin from "./components/Order/OrderHistoryAdmin";
 
 
 function App() {
@@ -148,6 +149,9 @@ function App() {
             } />
             <Route path="/OrderHistory" element = {
               <OrderHistoryPage />
+            } />
+            <Route path="/Orders" element = {
+              <OrderHistoryAdmin />
             } />
           </Routes>
         <Footer />
