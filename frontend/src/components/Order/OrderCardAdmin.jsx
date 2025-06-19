@@ -8,7 +8,7 @@ const convertStatus = {
 }
 
 
-export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, user, shippingMethod, shippingAddress, orderId }) {
+export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, user, shippingMethod, shippingAddress, orderId, setStep }) {
   const formattedDate = dayjs(createdAt).format('MMMM D, YYYY [at] HH:mm');
   const formattedPhone = user?.phone ? `+${user.phone}` : '';
 
@@ -39,11 +39,10 @@ export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, u
           'Content-Type': 'application/json',
         }
       });
-      console.log(res);
       if(res.status === 200) {
-        setOrders(res.data);
+        setStep(prev => prev + 1);
       }else {
-        console.log('Error whene loading orders history.');
+        console.log('Error whene changing the status of this order.');
       }
     }catch(err){
       if (err.response) {

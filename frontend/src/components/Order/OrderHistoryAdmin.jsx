@@ -6,6 +6,7 @@ export default function OrderHistoryAdmin() {
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const length =orders?.filter(order => order.status !== 'PENDING').length;
+  const [step, setStep] = useState(0);
 
   const loadOrderHistoryFromDB = async () => {
     const access_token = localStorage.getItem('access_token');
@@ -52,7 +53,7 @@ export default function OrderHistoryAdmin() {
 
   useEffect(() => {
     loadOrderHistoryFromDB();
-  }, []);
+  }, [step]);
 
 
   if (isLoading) return <div>Loading...</div>;
@@ -67,7 +68,7 @@ export default function OrderHistoryAdmin() {
             status={order.status_display} orderTotal={order.order_total} user={order.user}
             shippingMethod={order.shipping_method_name}
             shippingAddress = {order.shipping_address}
-            orderId={order.id} />
+            orderId={order.id} setStep={setStep} />
         ))
       }
       {!length ? 
