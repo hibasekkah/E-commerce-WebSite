@@ -118,8 +118,8 @@ export default function MakeOrder() {
             'Content-Type': 'application/json',
           }
         });
-        console.log(res);
         if(res.status === 201) {
+          localStorage.setItem('orderId', res.data.id)
           window.location.href = '/Order/Payment';
         }else {
           console.log('Failed to place order. Please try again.');
