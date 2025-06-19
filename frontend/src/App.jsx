@@ -11,7 +11,6 @@ import Footer from "./components/Footer/Footer";
 import AOS from "aos";
 import 'aos/dist/aos.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ProductCard from "./components/Product/ProductCard";
 import image1 from './assets/Products/Caftan.jpg'
 import image2 from './assets/Products/Balgha.jpg'
 import image3 from './assets/Products/Tarbouche.jpg'
@@ -35,23 +34,8 @@ import ProductDetails from "./components/Product/ProductDetails";
 import CartPage from "./components/Cart/CartPage";
 import MakeOrder from "./components/Order/MakeOrder";
 import Payment from "./components/Payment/Payment";
+import OrderHistoryPage from "./components/Order/OrderHistoryPage";
 
-
-const Products = [
-    {
-        image: image1,
-        description: "Women's Caftan – Royal Blue Color with Gold and Silver Embroidery",
-        rating: 3
-    }, {
-        image: image2, 
-        description: "Men's Babouche – Classic Black Leather",
-        rating: 4.5
-    }, {
-        image: image3, 
-        description: "Men's Tarbouche – Traditional Red Fez Hat with Elegant Black Tassel",
-        rating: 3.5
-    }
-];
 
 function App() {
   useEffect(() => {
@@ -161,6 +145,9 @@ function App() {
             } />
             <Route path="/Order/Payment" element = {
               <Payment />
+            } />
+            <Route path="/OrderHistory" element = {
+              <OrderHistoryPage />
             } />
           </Routes>
         <Footer />
