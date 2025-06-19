@@ -413,15 +413,7 @@ class AdminOrderUpdateSerializer(serializers.ModelSerializer):
         """
         # Get the new status from the incoming request data
         new_status = data.get('status')
-        
-        if new_status == OrderStatus.SHIPPED:
-            # If the admin is trying to mark the order as shipped...
-            tracking_number = data.get('tracking_number')
-            if not tracking_number:
-                # ...but didn't provide a tracking number, raise an error.
-                raise serializers.ValidationError(
-                    {"tracking_number": "A tracking number is required when marking an order as shipped."}
-                )
+    
         
         return data
     
