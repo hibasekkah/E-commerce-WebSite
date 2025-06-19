@@ -206,8 +206,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # settings.py
 PAYPAL_MODE = "sandbox"  # or "live" for production
-PAYPAL_CLIENT_ID = "ASC0-9_1T_ego-ldyi_x8OZyYGLr7MV2mufWYTP6CvD5qoBxqB3UriuAig-JIHQi25FXLAAO7JpzjBPx"
-PAYPAL_CLIENT_SECRET = "EG80GHK7Nhq9nf9k4SZIvE_JB8D4oRe54sa9ZliPaKaDHOSrv-liTTsI2DLNF0spEKIVwK3jFqr9akjo"
+PAYPAL_CLIENT_ID = "AUzyUJ4siTZfpwkJ8j53FqJ3vAFiWMLm6G5seJ84MsoryYn1iAeYJxP7uwwPH-v1J1ozJBqYBm-3UoGl"
+PAYPAL_CLIENT_SECRET = "EIAGU3Q9goVgbI5CjAgscdpSJyA8p9ikdICzebaMm1gPC-ep3iLoQl2kj7lcXy071pQwF1IPbq_30wmj"
 
 
 
