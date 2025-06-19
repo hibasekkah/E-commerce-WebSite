@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Select from 'react-select';
 import { Country, State, City } from 'country-state-city';
+import axios from 'axios';
 
 
 
@@ -8,6 +9,7 @@ export default function MakeOrder() {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [selectedState, setSelectedState] = useState(null);
     const [selectedCity, setSelectedCity] = useState(null);
+    const [city, setCity] = useState('');
     const [postalCode, setPostalCode] = useState('');
     const [addresse, setAddresse] = useState('');
     const [error, setError] = useState({});
@@ -53,13 +55,10 @@ export default function MakeOrder() {
     }
 
     // Validation de la ville (si des villes sont disponibles)
-    const cities = selectedState 
-        ? City.getCitiesOfState(selectedCountry.value, selectedState.value)
-        : City.getCitiesOfCountry(selectedCountry?.value);
-        
-    if ((cities.length > 0 && !selectedCity) || !selectedCity) {
-        newError.city = "Please select a city";
-        isValid = false;
+    const cityValue = selectedCity?.label || city;
+    if (!cityValue) {
+      newError.city = "Please select or enter a city";
+      isValid = false;
     }
 
     // Validation du code postal
@@ -104,7 +103,7 @@ export default function MakeOrder() {
       new_shipping_address : {
         country: selectedCountry.label,
         state: selectedState?.label || null,
-        city: selectedCity?.label || selectedCity,
+        city:  cityValue,
         postal_code: postalCode,
         address: addresse
       },
@@ -119,11 +118,18 @@ export default function MakeOrder() {
             'Content-Type': 'application/json',
           }
         });
-      console.log(res);
-        
-        // Redirection ou message de succès
+        console.log(res);
+        if(res.status === 201) {
+          window.location.href = '/Order/Payment';
+        }else {
+          console.log('Failed to place order. Please try again.');
+        }
     } catch (err) {
-        console.log('Failed to place order. Please try again.' + error);
+        if (err.response) {
+          console.log('Error response:', err.response.data);
+        } else {
+          console.log('Unknown error:', err);
+        }
     }
     };
 
@@ -254,8 +260,8 @@ export default function MakeOrder() {
                     type="text"
                     placeholder="Enter City"
                     className="border p-2 w-full"
-                    value={selectedCity || ''}
-                    onChange={(e) => handleCityChange(e.target.value)}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
                 />
                 <div className="mb-5 text-primary">
                     {error.city}
@@ -264,7 +270,7 @@ export default function MakeOrder() {
           )}
 
           {/* Postal code input if city selected or no cities but country selected */}
-          {(selectedCity || (cities.length === 0 && !selectedCity)) && (
+          {(selectedCity || city || (cities.length === 0 && !selectedCity)) && (
             <>
                 <div>
                 <label className="block mb-1">Postal Code:</label>
