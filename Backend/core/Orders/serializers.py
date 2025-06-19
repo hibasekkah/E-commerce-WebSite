@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import ShippingMethod
-from Users.serializers import AddressCreateSerializer # Assuming you have this
+from Users.serializers import AddressCreateSerializer, SimpleUserSerializer # Assuming you have this
 
 
 class ShippingMethodSerializer(serializers.ModelSerializer):
@@ -261,6 +261,44 @@ class OrderListSerializer(serializers.ModelSerializer):
     # --- Snapshot Fields ---
     # The shipping_address_snapshot is a JSONField, so we can represent it as such
     shipping_address = serializers.JSONField(source='shipping_address_snapshot', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'user',
+            'status',
+            'status_display', # e.g., "Processing"
+            'created_at',
+            'updated_at',
+            'payment', # Nested payment details
+            'shipping_address', # The address snapshot
+            'shipping_method_name', # The shipping method name snapshot
+            'tracking_number',
+            # Financial Breakdown
+            'subtotal',
+            'shipping_cost',
+            'discount_amount',
+            'order_total',
+            # Line Items
+            'lines'
+        ]
+
+class OrderListAdminSerializer(serializers.ModelSerializer):
+    """
+    A lightweight, read-only serializer for listing a user's orders efficiently.
+    """
+    lines = OrderLineSerializer(many=True, read_only=True)
+    payment = PaymentSerializer(read_only=True)
+    
+    # --- Helper/Calculated Fields ---
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    # --- Snapshot Fields ---
+    # The shipping_address_snapshot is a JSONField, so we can represent it as such
+    shipping_address = serializers.JSONField(source='shipping_address_snapshot', read_only=True)
+    user = SimpleUserSerializer(read_only=True)
+
 
     class Meta:
         model = Order

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from .models import ShippingMethod
-from .serializers import ShippingMethodSerializer
+from .serializers import OrderListAdminSerializer, ShippingMethodSerializer
 
 
 class ShippingMethodListView(generics.ListCreateAPIView):
@@ -125,7 +125,7 @@ class AdminOrderListAPIView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
     
     # 2. Use the lightweight list serializer.
-    serializer_class = OrderListSerializer
+    serializer_class = OrderListAdminSerializer
     
     # 3. Define the Queryset: This is the key difference.
     #    We fetch ALL Order objects, not just for the current user.

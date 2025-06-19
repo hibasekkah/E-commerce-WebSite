@@ -213,3 +213,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'account_status', 'role', 
             'created_at', 'updated_at'
         ]
+
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    """
+    A lightweight serializer for displaying basic user information,
+    perfect for nesting in other serializers like the OrderSerializer.
+    """
+    class Meta:
+        model = User
+        # Choose the fields you want the admin to see for an order.
+        # Email and name are usually sufficient. Avoid sending sensitive data.
+        fields = ['id', 'email', 'username', 'phone']
