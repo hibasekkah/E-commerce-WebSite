@@ -1,6 +1,6 @@
 from django.urls import path
 # Make sure to import the new view
-from .views import  OrderListCreateAPIView, OrderRetrieveAPIView, ShippingMethodListView
+from .views import  OrderListCreateAPIView, OrderRetrieveAPIView, ShippingMethodListView,AdminOrderDetailAPIView
 
 urlpatterns = [
     # path('orders/', OrderListCreateAPIView.as_view(), name='order-list-create'),
@@ -12,6 +12,7 @@ urlpatterns = [
     
     # This path handles retrieving a single order by its ID
     path('<int:pk>/', OrderRetrieveAPIView.as_view(), name='order-detail'),
+    path('admin/orders/<int:pk>/', AdminOrderDetailAPIView.as_view(), name='admin-order-detail'),
 
 
 ]

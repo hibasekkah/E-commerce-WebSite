@@ -89,4 +89,28 @@ class OrderRetrieveAPIView(generics.RetrieveAPIView):
         )
     
 
+from rest_framework import generics
+from rest_framework.permissions import IsAdminUser
+from .models import Order
+from .serializers import OrderSerializer, AdminOrderUpdateSerializer
 
+# ... your other existing views ...
+
+class AdminOrderDetailAPIView(generics.RetrieveUpdateAPIView):
+    """
+    An API endpoint for an administrator to view the full details of any
+    order and to update its fulfillment status.
+    """
+    permission_classes = [IsAdminUser] # <-- CRITICAL: Only admins can access this
+    queryset = Order.objects.all().select_related('user', 'payment')
+    
+    def get_serializer_class(self):
+        """
+        Smartly chooses the serializer based on the request method.
+        """
+        # For GET requests, use the detailed, read-only serializer.
+        if self.request.method == 'GET':
+            return OrderSerializer
+        
+        # For PUT or PATCH requests, use our new, specific update serializer.
+        return AdminOrderUpdateSerializer

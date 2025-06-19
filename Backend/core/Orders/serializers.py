@@ -13,8 +13,6 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
 
 # Add these imports
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
-from .models import ShippingMethod
 from .serializers import ShippingMethodSerializer
 
 # ... your other views (OrderListCreateAPIView, etc.)
@@ -28,10 +26,9 @@ class ShippingMethodListView(generics.ListAPIView):
     serializer_class = ShippingMethodSerializer
 
 from django.db import transaction
-from rest_framework import serializers
 from decimal import Decimal
 from django.utils import timezone
-from .models import Order, OrderLine, ShippingMethod, OrderStatus
+from .models import Order, OrderLine, OrderStatus
 from Users.models import UserShippingAddress, User # Assuming Address is in a 'users' app
 from Carts.models import ShoppingCart
 
@@ -350,3 +347,41 @@ class OrderSerializer(serializers.ModelSerializer):
             # Line Items
             'lines'
         ]
+
+
+
+
+from rest_framework import serializers
+from .models import Order, OrderStatus # Import the OrderStatus enum
+
+class AdminOrderUpdateSerializer(serializers.ModelSerializer):
+    """
+    A specific serializer for admins to update an order's status
+    and tracking information.
+    """
+    # We explicitly define the fields to ensure an admin can only change these.
+    status = serializers.ChoiceField(choices=OrderStatus.choices)
+    tracking_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    class Meta:
+        model = Order
+        fields = ['status', 'tracking_number']
+
+    def validate(self, data):
+        """
+        Add crucial business logic: a tracking number is required
+        if the new status is 'SHIPPED'.
+        """
+        # Get the new status from the incoming request data
+        new_status = data.get('status')
+        
+        if new_status == OrderStatus.SHIPPED:
+            # If the admin is trying to mark the order as shipped...
+            tracking_number = data.get('tracking_number')
+            if not tracking_number:
+                # ...but didn't provide a tracking number, raise an error.
+                raise serializers.ValidationError(
+                    {"tracking_number": "A tracking number is required when marking an order as shipped."}
+                )
+        
+        return data
