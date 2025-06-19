@@ -1,8 +1,9 @@
 import React from 'react';
 import dayjs from 'dayjs';
 
-export default function OrderCardAdmin({ lines, createdAt, status, orderTotal }) {
+export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, user, shippingMethod, shippingAddress }) {
   const formattedDate = dayjs(createdAt).format('MMMM D, YYYY [at] HH:mm');
+  const formattedPhone = user?.phone ? `+${user.phone}` : '';
 
   return (
     <div className='w-full max-w-4xl border-primary border-2 rounded-lg p-10 mb-5'>
@@ -12,6 +13,23 @@ export default function OrderCardAdmin({ lines, createdAt, status, orderTotal })
         <p className=' text-primary font-semibold'>{status}</p>
       </div>
 
+      {/* User Info */}
+      <div className='mb-5 flex flex-col gap-2 bg-gray-50 border border-gray-300 rounded p-4'>
+        <p><span className='font-semibold'>Username:</span> {user?.username}</p>
+        <p><span className='font-semibold'>Email:</span> {user?.email}</p>
+        <p><span className='font-semibold'>Phone:</span> {formattedPhone}</p>
+        <p><span className='font-semibold'>Shipping Method:</span> {shippingMethod}</p>
+      </div>
+
+      {/* Shipping Address */}
+      {shippingMethod !== 'In-Store Pickup' && (
+        <div className='mb-5 bg-gray-50 border border-gray-300 rounded p-4'>
+          <p className='font-semibold mb-2'>Shipping Address:</p>
+          <p>{shippingAddress.address}</p>
+          <p>{shippingAddress.city}, {shippingAddress.state}</p>
+          <p>{shippingAddress.postal_code}, {shippingAddress.country}</p>
+        </div>
+      )}
       {/* Product lines */}
       <div className='flex flex-col border-gray-600 border-2'>
         <div className='grid grid-cols-3 gap-5 font-semibold text-primary border-b-4 border-gray-500 

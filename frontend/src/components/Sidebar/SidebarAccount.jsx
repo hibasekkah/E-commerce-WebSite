@@ -28,12 +28,13 @@ const handleProfileAction = (action) => {
 
 export default function SidebarAccount() {
   const currentPath = window.location.pathname;
+  const role = localStorage.getItem('role') || '';
 
   return (
     <div className='m-5'>
       <p className='border-b-2 border-primary p-3 text-lg'>My Account</p>
       <ul>
-        {SideMenu.map((element) => {
+        {SideMenu.filter(element => !(role === 'Admin' && element.name === 'Orders History') ).map((element) => {
           const Icon = element.icon;
           return (
             <li key={element.id} >

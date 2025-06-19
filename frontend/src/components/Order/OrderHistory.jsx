@@ -40,7 +40,7 @@ export default function OrderHistory() {
       }else {
         console.log('Error whene loading orders history.');
       }
-    }catch(error){
+    }catch(err){
       if (err.response) {
         console.log('Error response:', err.response.data);
       } else {

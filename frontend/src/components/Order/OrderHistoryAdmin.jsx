@@ -28,7 +28,7 @@ export default function OrderHistoryAdmin() {
     }
     
     try {
-      const res = await axios.get('http://localhost:8000/api/Orders/', {
+      const res = await axios.get('http://localhost:8000/api/Orders/admin/orders/', {
         headers:{
           Authorization:`Bearer ${access_token}` ,
           'Content-Type': 'application/json',
@@ -64,7 +64,9 @@ export default function OrderHistoryAdmin() {
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) 
         .map((order, index) => (
           <OrderCardAdmin key={index} lines={order.lines} createdAt={order.created_at} 
-            status={order.status_display} orderTotal={order.order_total}/>
+            status={order.status_display} orderTotal={order.order_total} user={order.user}
+            shippingMethod={order.shipping_method_name}
+            shippingAddress = {order.shipping_address}/>
         ))
       }
       {!length ? 
