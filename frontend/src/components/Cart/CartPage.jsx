@@ -76,7 +76,6 @@ export default function CartPage() {
       });
       if(res.status === 200) {
         setCart(res.data);
-        console.log(res.data);
       } else {
         console.log('Error whene fetching the shopping cart.');
       }
@@ -94,9 +93,12 @@ export default function CartPage() {
   return (
     <div className='flex flex-col items-center justify-center my-5'>
         <h1 className='mb-8 font-dancing text-primary text-3xl font-bold'>Shopping Cart</h1>
-        <div className='mb-5 text-xl font-semibold'>
-          <p>Total price : {cart?.total_price}$</p>
-        </div>
+        {cart?.total_items > 0 ? 
+          <div className='mb-5 text-xl font-semibold'>
+            <p>Total price : {cart?.total_price}$</p>
+          </div>
+          : null
+        }
         { cart?.total_items > 0 ?
           (cart.items.map(item => {
           const name = item.product_item.name;
@@ -116,19 +118,25 @@ export default function CartPage() {
                   stockQuantity={stockQuantity}
                   currentQuantity={quantity} price={price} idItem={item.id} 
                   setStep={setStep}/>)
-        })) : <p className='mb-48 mt-10 bg-primary text-white px-3 py-2 text-lg font-semibold'>
+        })
+        ) : <p className='mb-48 mt-10 bg-primary text-white px-3 py-2 text-lg font-semibold'>
                Your cart is waiting for your picks. Start shopping now!
               </p>
       } 
-      <button 
-      className= {`bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold
-                  py-2 px-2 cursor-pointer transform transition-transform duration-200
-                  hover:from-blue-900 hover:to-blue-900 text-xl
-                  dark:from-blue-500 dark:to-blue-700 dark:hover:from-blue-500 dark:hover:to-blue-500`}
-      onClick={() => window.location.href = '/Order'}
-      >
-      Proceed to Checkout
-      </button>
+      {
+        cart?.total_items > 0 ?
+        <button 
+        className= {`bg-gradient-to-r from-blue-500 to-blue-800 text-white font-semibold
+                    py-2 px-2 cursor-pointer transform transition-transform duration-200
+                    hover:from-blue-900 hover:to-blue-900 text-xl
+                    dark:from-blue-500 dark:to-blue-700 dark:hover:from-blue-500 dark:hover:to-blue-500`}
+        onClick={() => window.location.href = '/Order'}
+        >
+        Proceed to Checkout
+        </button> 
+        : null
+      }
+      
     </div>
     
   )
