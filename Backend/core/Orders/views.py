@@ -114,3 +114,21 @@ class AdminOrderDetailAPIView(generics.RetrieveUpdateAPIView):
         
         # For PUT or PATCH requests, use our new, specific update serializer.
         return AdminOrderUpdateSerializer
+    
+
+class AdminOrderListAPIView(generics.ListAPIView):
+    """
+    An API endpoint for administrators to list ALL orders in the system.
+    This endpoint is read-only and restricted to admin users.
+    """
+    # 1. Set Permissions: Only users with `is_staff=True` can access this.
+    permission_classes = [IsAdminUser]
+    
+    # 2. Use the lightweight list serializer.
+    serializer_class = OrderListSerializer
+    
+    # 3. Define the Queryset: This is the key difference.
+    #    We fetch ALL Order objects, not just for the current user.
+    queryset = Order.objects.all().select_related('user').annotate(
+        item_count_annotated=Count('lines')
+    ).order_by('-created_at') # Show most recent orders first

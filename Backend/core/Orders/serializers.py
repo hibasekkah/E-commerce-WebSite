@@ -326,6 +326,7 @@ class OrderSerializer(serializers.ModelSerializer):
     # The shipping_address_snapshot is a JSONField, so we can represent it as such
     shipping_address = serializers.JSONField(source='shipping_address_snapshot', read_only=True)
 
+
     class Meta:
         model = Order
         fields = [
@@ -385,3 +386,5 @@ class AdminOrderUpdateSerializer(serializers.ModelSerializer):
                 )
         
         return data
+    
+
