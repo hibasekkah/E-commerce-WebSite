@@ -7,10 +7,9 @@ import DarkMode from './DarkMode';
 import { CgProfile } from "react-icons/cg";
 
 const Menu = [
-  { id: 1, name: 'Dashboard', link: '#' },
-  { id: 2, name: 'Products', link: '/Product' },
-  { id: 3, name: 'Orders', link: '#' },
-  { id: 5, name: 'Promotions', link: '/Promotions'}
+  { id: 1, name: 'Products', link: '/Product' },
+  { id: 2, name: 'Orders', link: '#' },
+  { id: 3, name: 'Promotions', link: '/Promotions'}
 ];
 
 const ProfileElements = [

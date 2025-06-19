@@ -1,5 +1,5 @@
 import React from 'react';
-import { MdDashboard, MdLocalOffer, MdInventory2, MdShoppingCart } from 'react-icons/md';
+import { MdLocalOffer, MdInventory2, MdShoppingCart } from 'react-icons/md';
 
 export default function AdminPage() {
   const username = localStorage.getItem('username') || 'Administrator';
@@ -12,14 +12,6 @@ export default function AdminPage() {
       </p>
 
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <MdDashboard className="text-primary text-2xl mt-1" />
-          <div>
-            <h2 className="text-xl font-semibold">Dashboard</h2>
-            <p className="text-gray-600 dark:text-gray-300">Access site analytics, recent activities, and key performance metrics.</p>
-          </div>
-        </div>
-
         <div className="flex items-start gap-3">
           <MdInventory2 className="text-primary text-2xl mt-1" />
           <div>
