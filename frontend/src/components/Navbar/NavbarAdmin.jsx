@@ -8,7 +8,7 @@ import { CgProfile } from "react-icons/cg";
 
 const Menu = [
   { id: 1, name: 'Products', link: '/Product' },
-  { id: 2, name: 'Orders', link: '#' },
+  { id: 2, name: 'Orders', link: '/Orders' },
   { id: 3, name: 'Promotions', link: '/Promotions'}
 ];
 
