@@ -1,9 +1,58 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import axios from 'axios';
 
-export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, user, shippingMethod, shippingAddress }) {
+const convertStatus = {
+  Processing : 'SHIPPED',
+  Shipped: 'DELIVERED'
+}
+
+
+export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, user, shippingMethod, shippingAddress, orderId }) {
   const formattedDate = dayjs(createdAt).format('MMMM D, YYYY [at] HH:mm');
   const formattedPhone = user?.phone ? `+${user.phone}` : '';
+
+  const changeStatus = async (status) => {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      setMessage("Unauthorized: You will be logged out. Please log in again.");
+      setMessageStatus(true);
+      setTimeout(() => {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("username");
+          localStorage.removeItem("email");
+          localStorage.removeItem("phone");
+          localStorage.removeItem("dob");
+          localStorage.removeItem("gender");
+          window.location.href = '/';
+      }, 2000);
+      
+      return;
+    }
+    
+    try {
+      const res = await axios.patch(`http://localhost:8000/api/Orders/admin/orders/${orderId}/`, {status}, {
+        headers:{
+          Authorization:`Bearer ${access_token}` ,
+          'Content-Type': 'application/json',
+        }
+      });
+      console.log(res);
+      if(res.status === 200) {
+        setOrders(res.data);
+      }else {
+        console.log('Error whene loading orders history.');
+      }
+    }catch(err){
+      if (err.response) {
+        console.log('Error response:', err.response.data);
+      } else {
+        console.log('Unknown error:', err);
+      }
+    }
+  }
 
   return (
     <div className='w-full max-w-4xl border-primary border-2 rounded-lg p-10 mb-5'>
@@ -11,6 +60,16 @@ export default function OrderCardAdmin({ lines, createdAt, status, orderTotal, u
       <div className='flex justify-between items-start gap-4 mb-5'>
         <p className=' text-gray-500'>Ordered on: <span className='font-medium'>{formattedDate}</span></p>
         <p className=' text-primary font-semibold'>{status}</p>
+        {status !== 'Delivered' ?
+        <button className='bg-gradient-to-r from-primary to-secondary text-white font-bold 
+                          py-1 px-4 rounded-full cursor-pointer transform transition-transform duration-200 hover:scale-105'
+                onClick={() => changeStatus(convertStatus[status])}
+        >
+          Change Status to {convertStatus[status]}
+        </button>
+        : null
+        }
+        
       </div>
 
       {/* User Info */}

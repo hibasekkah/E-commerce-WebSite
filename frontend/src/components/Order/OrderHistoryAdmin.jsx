@@ -66,7 +66,8 @@ export default function OrderHistoryAdmin() {
           <OrderCardAdmin key={index} lines={order.lines} createdAt={order.created_at} 
             status={order.status_display} orderTotal={order.order_total} user={order.user}
             shippingMethod={order.shipping_method_name}
-            shippingAddress = {order.shipping_address}/>
+            shippingAddress = {order.shipping_address}
+            orderId={order.id} />
         ))
       }
       {!length ? 
