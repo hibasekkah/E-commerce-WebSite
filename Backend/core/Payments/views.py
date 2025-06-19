@@ -1,4 +1,3 @@
-
 import paypalrestsdk
 import stripe
 from django.conf import settings

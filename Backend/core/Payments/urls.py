@@ -5,6 +5,7 @@ from .views import (
     CreatePayPalOrderAPIView, # <-- Add this
     CapturePayPalOrderAPIView # <-- And this
 )
+app_name = 'Payments'
 
 urlpatterns = [
     # Stripe URLs
