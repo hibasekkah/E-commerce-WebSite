@@ -6,10 +6,8 @@ import { RiLockPasswordLine } from "react-icons/ri";
 const SideMenu = [
     { id: 1, icon: CgProfile, name: 'Profile', link:'/Profile'},
     { id: 2, icon: RiLockPasswordLine, name: 'Change Password', link: '/ChangePasswordPage' },
-    { id: 3, icon: CgShoppingCart, name: 'Orders History', link: '#' },
-    { id: 4, icon: CgHome, name: 'Addresses', link: '/Addresses' },
-    { id: 5, icon: CgSupport, name: 'Support Tickets', link: '#' },
-    { id: 6, icon: CgLogOut, name: 'Logout', action: 'logout' },
+    { id: 3, icon: CgShoppingCart, name: 'Orders History', link: '/OrderHistory' },
+    { id: 4, icon: CgLogOut, name: 'Logout', action: 'logout' },
 ]
 
 
