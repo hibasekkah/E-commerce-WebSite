@@ -106,7 +106,7 @@ class Order(models.Model):
         
         # 3. Perform the final calculation, ensuring all components are Decimals.
         #    This formula is correct for your requirement of not including tax.
-        self.order_total = self.subtotal + Decimal(self.shipping_cost) - Decimal(self.discount_amount)
+        self.order_total = self.subtotal + Decimal(self.shipping_cost) 
         
         # 4. Save the updated, accurate totals to the database.
         self.save(update_fields=['subtotal', 'order_total'])
